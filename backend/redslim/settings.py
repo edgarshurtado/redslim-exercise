@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'hello.apps.HelloConfig',
+    'market_data.apps.MarketDataConfig',
 ]
 
 MIDDLEWARE = [
