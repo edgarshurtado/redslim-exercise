@@ -62,10 +62,10 @@ def test_idempotency(write_csv):
     filename = write_csv("test_idempotent.csv", "\n".join([CSV_HEADER, ROW_1, ROW_2, ROW_3]))
 
     out = io.StringIO()
-    call_command("load_csv", filename, stdout=out)
     call_command("load_csv", filename)
+    call_command("load_csv", filename, stdout=out)
 
-    assert "Loaded 3 rows from test_idempotent.csv." in out.getvalue()
+    assert "Loaded 0 rows from test_idempotent.csv." in out.getvalue()
     assert Brand.objects.count() == 3
     assert SubBrand.objects.count() == 3
     assert Product.objects.count() == 3
@@ -121,8 +121,7 @@ def test_cache_effectiveness(write_csv):
 
     # With caching: 4 dims × 2 queries (SELECT+INSERT, first row only) + N data × 2 = 8 + 2N = 28
     # Without caching: 4 dims × 2 per row + N data × 2 = 8N + 2N = ~64 for N=10
-    # N * 4 = 40, so 28 < 40 passes and 64 > 40 would fail (catching missing cache)
-    assert len(data_queries) < N * 4
+    assert len(data_queries) == 28
 
 
 @pytest.mark.django_db
