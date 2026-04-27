@@ -54,3 +54,31 @@ def test_happy_path(write_csv):
     assert str(data_row.date) == "2016-09-04"
     assert data_row.period_weeks == 4
     assert "Loaded 3 rows from test_happy.csv." in out.getvalue()
+
+
+@pytest.mark.django_db
+def test_idempotency(write_csv):
+    filename = write_csv("test_idempotent.csv", "\n".join([CSV_HEADER, ROW_1, ROW_2, ROW_3]))
+
+    call_command("load_csv", filename)
+    call_command("load_csv", filename)
+
+    assert Brand.objects.count() == 3
+    assert SubBrand.objects.count() == 3
+    assert Product.objects.count() == 3
+    assert Market.objects.count() == 3
+    assert Data.objects.count() == 3
+
+
+@pytest.mark.django_db
+def test_dimension_deduplication(write_csv):
+    row_a = "MARKET3,1000,9400,PRODUCT ALPHA,ITEM,CHS,MFG,SHARED BRAND,SHARED SUB,FAMILY,400-499G,400.0,CHUNKY,AUG16 4WKS 04/09/16,TOT RETAILER 1,2016-09-04"
+    row_b = "MARKET3,2000,8500,PRODUCT BETA,ITEM,CHS,MFG,SHARED BRAND,SHARED SUB,ADULT,400-499G,400.0,CHUNKY,AUG16 4WKS 11/09/16,TOT RETAILER 1,2016-09-11"
+
+    filename = write_csv("test_dedup.csv", "\n".join([CSV_HEADER, row_a, row_b]))
+    call_command("load_csv", filename)
+
+    assert Brand.objects.filter(description="SHARED BRAND").count() == 1
+    assert SubBrand.objects.filter(description="SHARED SUB").count() == 1
+    assert Product.objects.count() == 2
+    assert Data.objects.count() == 2
