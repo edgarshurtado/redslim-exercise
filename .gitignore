@@ -1,3 +1,7 @@
 .claude
 some_dataset_csv/
 unistar_dk/
+backend/venv/
+backend/.env
+**/__pycache__/
+*.pyc
