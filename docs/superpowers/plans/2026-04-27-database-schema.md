@@ -296,7 +296,7 @@ class Data(models.Model):
     period_weeks = models.IntegerField()
 
     class Meta:
-        db_table = 'data'
+        db_table = 'sales_data'
 ```
 
 - [ ] **Step 2: Verify Django accepts the models**
