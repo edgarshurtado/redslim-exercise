@@ -68,7 +68,7 @@ class Command(BaseCommand):
                             f"Cannot parse period_weeks from TIME: {row['TIME']!r}"
                         )
 
-                    Data.objects.get_or_create(
+                    _, created = Data.objects.get_or_create(
                         market=market,
                         product=product,
                         date=datetime.date.fromisoformat(row["DATETIME"]),
@@ -78,6 +78,7 @@ class Command(BaseCommand):
                             "period_weeks": int(match.group(1)),
                         },
                     )
-                    count += 1
+                    if created:
+                        count += 1
 
         self.stdout.write(f"Loaded {count} rows from {filename}.")
