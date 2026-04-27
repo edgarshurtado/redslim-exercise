@@ -1,7 +1,7 @@
 import csv
 import datetime
 import re
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
@@ -71,7 +71,7 @@ class Command(BaseCommand):
 
                     try:
                         value = Decimal(row["VAL"])
-                    except Exception:
+                    except InvalidOperation:
                         raise ValueError(f"Cannot parse value from VAL: {row['VAL']!r}")
 
                     _, created = Data.objects.get_or_create(
