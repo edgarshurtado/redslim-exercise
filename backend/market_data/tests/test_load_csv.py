@@ -2,6 +2,7 @@ import io
 import pytest
 from pathlib import Path
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from market_data.models import Brand, SubBrand, Product, Market, Data
 
 CSV_HEADER = "M Desc,VAL,WTD,Product,LEVEL,CATEGORY,MANUFACTURER,BRAND,SUBBRAND,SEGMENT,PACKSIZE,SIZE,FORMAT,TIME,M Desc 2,DATETIME"
@@ -136,12 +137,13 @@ def test_invalid_time_rolls_back(write_csv):
         call_command("load_csv", filename)
 
     assert Brand.objects.count() == 0
+    assert SubBrand.objects.count() == 0
+    assert Product.objects.count() == 0
+    assert Market.objects.count() == 0
     assert Data.objects.count() == 0
 
 
 @pytest.mark.django_db
 def test_file_not_found():
-    from django.core.management.base import CommandError
-
     with pytest.raises(CommandError, match="File not found"):
         call_command("load_csv", "nonexistent_file_xyz.csv")
