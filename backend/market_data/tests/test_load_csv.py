@@ -85,3 +85,40 @@ def test_dimension_deduplication(write_csv):
     assert Market.objects.count() == 1
     assert Product.objects.count() == 2
     assert Data.objects.count() == 2
+
+
+@pytest.mark.django_db
+def test_cache_effectiveness(write_csv):
+    """Dimension caches prevent repeated DB queries for duplicate dimension values."""
+    dates = [
+        ("AUG16 4WKS 04/09/16", "2016-09-04"),
+        ("AUG16 4WKS 11/09/16", "2016-09-11"),
+        ("AUG16 4WKS 18/09/16", "2016-09-18"),
+        ("AUG16 4WKS 25/09/16", "2016-09-25"),
+        ("SEP16 4WKS 02/10/16", "2016-10-02"),
+        ("SEP16 4WKS 09/10/16", "2016-10-09"),
+        ("SEP16 4WKS 16/10/16", "2016-10-16"),
+        ("SEP16 4WKS 23/10/16", "2016-10-23"),
+        ("SEP16 4WKS 30/10/16", "2016-10-30"),
+        ("OCT16 4WKS 06/11/16", "2016-11-06"),
+    ]
+    N = len(dates)
+    rows = [
+        f"MARKET3,1000,9400,SAME PRODUCT,ITEM,CHS,MFG,SAME BRAND,SAME SUB,FAMILY,400-499G,400.0,CHUNKY,{time},TOT RETAILER 1,{iso}"
+        for time, iso in dates
+    ]
+    filename = write_csv("test_cache.csv", "\n".join([CSV_HEADER] + rows))
+
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    with CaptureQueriesContext(connection) as ctx:
+        call_command("load_csv", filename)
+
+    # Filter out SAVEPOINT statements (transaction infrastructure, not data queries).
+    data_queries = [q for q in ctx.captured_queries if "SAVEPOINT" not in q["sql"]]
+
+    # With caching: 4 dims × 2 queries (SELECT+INSERT, first row only) + N data × 2 = 8 + 2N = 28
+    # Without caching: 4 dims × 2 per row + N data × 2 = 8N + 2N = ~64 for N=10
+    # N * 4 = 40, so 28 < 40 passes and 64 > 40 would fail (catching missing cache)
+    assert len(data_queries) < N * 4
