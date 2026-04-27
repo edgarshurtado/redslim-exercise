@@ -544,7 +544,7 @@ The full scripts block should look like:
 - [ ] **Step 10: Create `frontend/.env.local`**
 
 ```
-API_BASE_URL=http://localhost:8000
+VITE_API_BASE_URL=http://localhost:8000
 ```
 
 - [ ] **Step 11: Verify dev server starts on port 8080**
@@ -620,7 +620,7 @@ Expected: both tests FAIL (App component doesn't match expectations yet).
 import axios from 'axios'
 
 export default axios.create({
-  baseURL: import.meta.env.API_BASE_URL
+  baseURL: import.meta.env.VITE_API_BASE_URL
 })
 ```
 
