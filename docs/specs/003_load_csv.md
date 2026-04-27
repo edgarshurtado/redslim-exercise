@@ -44,6 +44,8 @@ python manage.py load_csv <filename>
 Loaded X rows from <filename>.
 ```
 
+`X` is the count of newly created `Data` rows (rows already present are not counted).
+
 ---
 
 ## Processing Logic
@@ -114,8 +116,8 @@ All errors are all-or-nothing — no partial imports.
 | # | Name | What it verifies |
 |---|---|---|
 | 1 | Happy path | Load 3–5 row fixture; assert correct counts in all five tables and spot-check field values |
-| 2 | Idempotency | Run command twice; assert row counts are identical after second run |
+| 2 | Idempotency | Run command twice; assert row counts are identical after second run and second run stdout reports `Loaded 0 rows` |
 | 3 | Dimension deduplication | Two rows with same `BRAND`; assert only one `Brand` row exists |
-| 4 | Cache effectiveness | N rows sharing all dimension values; use `CaptureQueriesContext` to assert query count < N × 4 |
+| 4 | Cache effectiveness | N rows sharing all dimension values; use `CaptureQueriesContext` to assert query count == 28 (4 dim SELECT+INSERT on first row only, + N × 2 Data SELECT+INSERT) |
 | 5 | Invalid TIME | Row with no `WKS` in `TIME`; assert error raised and all tables empty (full rollback) |
 | 6 | File not found | Non-existent filename; assert `CommandError` raised |
