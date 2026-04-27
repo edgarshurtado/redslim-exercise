@@ -19,7 +19,7 @@ redslim-exercise/
 
 ### 1. Frontend (local)
 - **Folder:** `frontend/`
-- **Stack:** React, React Material UI, Vite, Tailwind CSS, Axios, Jest
+- **Stack:** React, TypeScript, React Material UI, Vite, Tailwind CSS, Axios, Jest
 - **Port:** `8080`
 - **Start command:** `npm run dev`
 
@@ -54,7 +54,7 @@ DATABASE_PORT=5432
 
 **`frontend/`** points to the backend via a Vite env variable:
 ```
-API_BASE_URL=http://localhost:8000
+VITE_API_BASE_URL=http://localhost:8000
 ```
 
 ---
