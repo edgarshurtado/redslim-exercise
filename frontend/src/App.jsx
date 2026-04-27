@@ -8,6 +8,7 @@ function App() {
   useEffect(() => {
     apiClient.get('/redslim-hello')
       .then(res => setMessage(res.data.message))
+      .catch(() => setMessage('Could not reach the server.'))
   }, [])
 
   return (
