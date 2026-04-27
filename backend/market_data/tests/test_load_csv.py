@@ -60,9 +60,11 @@ def test_happy_path(write_csv):
 def test_idempotency(write_csv):
     filename = write_csv("test_idempotent.csv", "\n".join([CSV_HEADER, ROW_1, ROW_2, ROW_3]))
 
-    call_command("load_csv", filename)
+    out = io.StringIO()
+    call_command("load_csv", filename, stdout=out)
     call_command("load_csv", filename)
 
+    assert "Loaded 3 rows from test_idempotent.csv." in out.getvalue()
     assert Brand.objects.count() == 3
     assert SubBrand.objects.count() == 3
     assert Product.objects.count() == 3
@@ -80,5 +82,6 @@ def test_dimension_deduplication(write_csv):
 
     assert Brand.objects.filter(description="SHARED BRAND").count() == 1
     assert SubBrand.objects.filter(description="SHARED SUB").count() == 1
+    assert Market.objects.count() == 1
     assert Product.objects.count() == 2
     assert Data.objects.count() == 2
