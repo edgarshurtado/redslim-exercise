@@ -1,5 +1,6 @@
 import pytest
 from datetime import date
+from decimal import Decimal
 from market_data.models import Brand, SubBrand, Product, Market, Data
 
 
@@ -15,7 +16,7 @@ def data_record(db):
     return Data.objects.create(
         market=market,
         product=product,
-        value=32,
+        value=Decimal("32.40"),
         weighted_distribution=9400,
         date=date(2016, 9, 4),
         period_weeks=4,
@@ -77,7 +78,7 @@ def test_market_can_be_created():
 
 def test_data_links_market_and_product(data_record):
     assert data_record.id is not None
-    assert data_record.value == 32
+    assert data_record.value == Decimal("32.40")
     assert data_record.weighted_distribution == 9400
     assert data_record.period_weeks == 4
     assert data_record.market_id == data_record.market.id

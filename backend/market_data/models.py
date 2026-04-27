@@ -35,7 +35,7 @@ class Market(models.Model):
 class Data(models.Model):
     market = models.ForeignKey(Market, on_delete=models.CASCADE, db_column='market_fk')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, db_column='product_fk')
-    value = models.IntegerField()
+    value = models.DecimalField(max_digits=12, decimal_places=2)
     weighted_distribution = models.IntegerField()
     date = models.DateField()
     period_weeks = models.IntegerField()

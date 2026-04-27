@@ -1,5 +1,6 @@
 import io
 import pytest
+from decimal import Decimal
 from pathlib import Path
 from django.core.management import call_command
 from django.core.management.base import CommandError
@@ -10,6 +11,7 @@ CSV_HEADER = "M Desc,VAL,WTD,Product,LEVEL,CATEGORY,MANUFACTURER,BRAND,SUBBRAND,
 ROW_1 = "MARKET3,1000,9400,CHS ORGANIC TREE UT PLUS UT VETO BRETS FAMILY 400,ITEM,CHS,ORGANIC TREE,UT PLUS,UT VETO BRETS,FAMILY,400-499G,400.0,CHUNKY,AUG16 4WKS 04/09/16,TOT RETAILER 1,2016-09-04"
 ROW_2 = "MARKET3,2000,8500,CHS SUPER FOOD SON WIIT-PEX CAYNTGAWN ADULT 500,ITEM,CHS,SUPER FOOD,SON WIIT-PEX,CAYNTGAWN,ADULT,500-599G,500.0,SHREDDED/GRATED,AUG16 4WKS 04/09/16,TOT RETAILER 2,2016-09-04"
 ROW_3 = "MARKET4,3000,7500,CHS PRIVATE LABEL PL-SUB FAMILY 300,ITEM,CHS,PRIVATE LABEL,PRIVATE LABEL,PL-SUB,FAMILY,300-399G,300.0,CHUNKY,AUG16 4WKS 04/09/16,TOT RETAILER 1,2016-09-04"
+ROW_DECIMAL = "MARKET3,32.40,9400,CHS ORGANIC TREE UT PLUS UT VETO BRETS FAMILY 400,ITEM,CHS,ORGANIC TREE,UT PLUS,UT VETO BRETS,FAMILY,400-499G,400.0,CHUNKY,AUG16 4WKS 04/09/16,TOT RETAILER 1,2016-09-04"
 
 
 @pytest.fixture
@@ -50,7 +52,7 @@ def test_happy_path(write_csv):
     data_row = Data.objects.get(
         product__description="CHS ORGANIC TREE UT PLUS UT VETO BRETS FAMILY 400"
     )
-    assert data_row.value == 1000
+    assert data_row.value == Decimal("1000.00")
     assert data_row.weighted_distribution == 9400
     assert str(data_row.date) == "2016-09-04"
     assert data_row.period_weeks == 4
@@ -146,3 +148,13 @@ def test_invalid_time_rolls_back(write_csv):
 def test_file_not_found():
     with pytest.raises(CommandError, match="File not found"):
         call_command("load_csv", "nonexistent_file_xyz.csv")
+
+
+@pytest.mark.django_db
+def test_decimal_value_is_stored_exactly(write_csv):
+    filename = write_csv("test_decimal.csv", "\n".join([CSV_HEADER, ROW_DECIMAL]))
+    call_command("load_csv", filename)
+    data_row = Data.objects.get(
+        product__description="CHS ORGANIC TREE UT PLUS UT VETO BRETS FAMILY 400"
+    )
+    assert data_row.value == Decimal("32.40")

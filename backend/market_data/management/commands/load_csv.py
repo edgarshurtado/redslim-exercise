@@ -1,6 +1,7 @@
 import csv
 import datetime
 import re
+from decimal import Decimal
 from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
@@ -68,12 +69,17 @@ class Command(BaseCommand):
                             f"Cannot parse period_weeks from TIME: {row['TIME']!r}"
                         )
 
+                    try:
+                        value = Decimal(row["VAL"])
+                    except Exception:
+                        raise ValueError(f"Cannot parse value from VAL: {row['VAL']!r}")
+
                     _, created = Data.objects.get_or_create(
                         market=market,
                         product=product,
                         date=datetime.date.fromisoformat(row["DATETIME"]),
                         defaults={
-                            "value": int(row["VAL"]),
+                            "value": value,
                             "weighted_distribution": int(row["WTD"]),
                             "period_weeks": int(match.group(1)),
                         },
