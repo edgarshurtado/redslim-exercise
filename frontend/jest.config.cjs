@@ -2,7 +2,7 @@
 // .js files as ESM. Jest needs CommonJS config, so .cjs forces CJS resolution.
 module.exports = {
   testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/src/setupTests.js'],
+  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
   transform: {
     '^.+\\.[jt]sx?$': 'babel-jest'
   },

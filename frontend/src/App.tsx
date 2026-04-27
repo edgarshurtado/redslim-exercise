@@ -3,7 +3,7 @@ import { Typography, Container, Box } from '@mui/material'
 import apiClient from './api/client'
 
 function App() {
-  const [message, setMessage] = useState(null)
+  const [message, setMessage] = useState<string | null>(null)
 
   useEffect(() => {
     apiClient.get('/redslim-hello')
