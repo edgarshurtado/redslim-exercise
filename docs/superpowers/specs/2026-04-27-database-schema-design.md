@@ -102,7 +102,7 @@ erDiagram
 
 ## Acceptance Criteria
 
-1. All five tables exist in the PostgreSQL database: `brand`, `subbrand`, `product`, `market`, `data`.
+1. All five tables exist in the PostgreSQL database: `brand`, `subbrand`, `product`, `market`, `sales_data`.
 2. All foreign keys use `ON DELETE CASCADE`: deleting a `Brand` cascades to its `SubBrand` rows, then to `Product`, then to `Data`; deleting a `Market` cascades to its `Data` rows.
 3. No nullable fields — all columns have `NOT NULL` constraints.
 4. `Data.weighted_distribution` stores values multiplied by 100 (e.g. `9400` for 94%) — no decimal columns.
