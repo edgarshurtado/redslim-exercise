@@ -122,3 +122,26 @@ def test_cache_effectiveness(write_csv):
     # Without caching: 4 dims × 2 per row + N data × 2 = 8N + 2N = ~64 for N=10
     # N * 4 = 40, so 28 < 40 passes and 64 > 40 would fail (catching missing cache)
     assert len(data_queries) < N * 4
+
+
+@pytest.mark.django_db
+def test_invalid_time_rolls_back(write_csv):
+    valid_row = "MARKET3,1000,9400,PRODUCT VALID,ITEM,CHS,MFG,BRAND VALID,SUB VALID,FAMILY,400-499G,400.0,CHUNKY,AUG16 4WKS 04/09/16,TOT RETAILER 1,2016-09-04"
+    invalid_row = "MARKET3,2000,8500,PRODUCT INVALID,ITEM,CHS,MFG,BRAND INVALID,SUB INVALID,FAMILY,400-499G,400.0,CHUNKY,AUG16 BADTIME,TOT RETAILER 1,2016-09-04"
+    filename = write_csv(
+        "test_invalid_time.csv", "\n".join([CSV_HEADER, valid_row, invalid_row])
+    )
+
+    with pytest.raises(ValueError, match="Cannot parse period_weeks"):
+        call_command("load_csv", filename)
+
+    assert Brand.objects.count() == 0
+    assert Data.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_file_not_found():
+    from django.core.management.base import CommandError
+
+    with pytest.raises(CommandError, match="File not found"):
+        call_command("load_csv", "nonexistent_file_xyz.csv")
