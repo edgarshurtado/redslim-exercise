@@ -65,7 +65,10 @@ DATABASES = {
     }
 }
 
-CORS_ALLOWED_ORIGINS = ['http://localhost:8080']
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:8080',
+    'http://127.0.0.1:8080',
+]
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
