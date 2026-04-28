@@ -1,6 +1,12 @@
+from decimal import Decimal, ROUND_HALF_UP
+
+from django.db.models import DecimalField, ExpressionWrapper, F, Q, Sum
 from rest_framework import serializers, viewsets
 from rest_framework.filters import OrderingFilter
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from market_data.models import Data
 
 _ORDERING_MAP = {
@@ -58,3 +64,38 @@ class DataTableFormatViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = _DataTableSerializer
     pagination_class = _TablePagination
     filter_backends = [_TableOrderingFilter]
+
+
+class BrandDominanceView(APIView):
+    def get(self, request):
+        qs = Data.objects.values(
+            brand=F('product__sub_brand__brand__description')
+        ).annotate(
+            total_value=Sum('value'),
+            wtd_numerator=Sum(
+                ExpressionWrapper(
+                    F('value') * F('weighted_distribution'),
+                    output_field=DecimalField(max_digits=20, decimal_places=4),
+                ),
+                filter=Q(weighted_distribution__isnull=False),
+            ),
+            wtd_denominator=Sum(
+                'value',
+                filter=Q(weighted_distribution__isnull=False),
+            ),
+        ).order_by('-total_value')
+
+        results = []
+        for row in qs:
+            wtd = None
+            if row['wtd_numerator'] is not None and row['wtd_denominator']:
+                wtd = (row['wtd_numerator'] / row['wtd_denominator']).quantize(
+                    Decimal('0.01'), rounding=ROUND_HALF_UP
+                )
+            results.append({
+                'brand': row['brand'],
+                'total_value': str(row['total_value']),
+                'weighted_avg_wtd': str(wtd) if wtd is not None else None,
+            })
+
+        return Response(results)
