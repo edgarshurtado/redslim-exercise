@@ -22,6 +22,13 @@ function Layout() {
           >
             Explore
           </RouterLink>
+          <RouterLink
+            to="/dominance"
+            aria-current={pathname === '/dominance' ? 'page' : undefined}
+            className={`text-nav-accent no-underline ml-4 text-sm ${pathname === '/dominance' ? 'border-b-2 border-nav-accent pb-0.5' : ''}`}
+          >
+            Dominance
+          </RouterLink>
         </Toolbar>
       </AppBar>
       <Outlet />

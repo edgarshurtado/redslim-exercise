@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import Landing from './pages/Landing'
 import Explore from './pages/Explore'
+import Dominance from './pages/Dominance'
 
 function App() {
   return (
@@ -9,6 +10,7 @@ function App() {
       <Route element={<Layout />}>
         <Route path="/" element={<Landing />} />
         <Route path="/explore" element={<Explore />} />
+        <Route path="/dominance" element={<Dominance />} />
       </Route>
     </Routes>
   )
