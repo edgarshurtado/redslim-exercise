@@ -14,15 +14,17 @@ React Router v6 Layout + Outlet pattern. A single `Layout` component holds the `
 ### File structure changes
 
 ```
-frontend/src/
-  main.tsx              — wrap App in <BrowserRouter>
-  App.tsx               — changed: defines route tree (no JSX content of its own)
-  components/
-    Layout.tsx          — new: MUI AppBar + <Outlet />
-  pages/
-    Landing.tsx         — new: current App content moved here
-    Explore.tsx         — new: placeholder page
-  api/client.ts         — unchanged
+frontend/
+  tailwind.config.js    — extended: nav-accent color token (#90caf9)
+  src/
+    main.tsx            — wrap App in <BrowserRouter>
+    App.tsx             — changed: defines route tree (no JSX content of its own)
+    components/
+      Layout.tsx        — new: MUI AppBar + <Outlet />
+    pages/
+      Landing.tsx       — new: current App content moved here
+      Explore.tsx       — new: placeholder page
+    api/client.ts       — unchanged
 ```
 
 ### Route tree
@@ -44,9 +46,9 @@ frontend/src/
 
 - MUI `AppBar` with `position="static"` (scrolls with page, avoids content overlap)
 - Navbar background: `#1a1a2e` (dark navy)
-- Left: app title "Edgar's ReadSlim Exercise" — a `RouterLink` to `/`, white bold text
-- Right of title: "Explore" link — `RouterLink` to `/explore`, `#90caf9` (MUI light blue), 16px `margin-left`
-- Active route link gets `borderBottom: '2px solid #90caf9'` via `sx` prop, determined by comparing `useLocation().pathname` to the link's target path
+- Left: app title "Edgar's ReadSlim Exercise" — a `RouterLink` to `/` with classes `text-white font-bold text-base tracking-[0.3px] no-underline`
+- Right of title: "Explore" link — a `RouterLink` to `/explore` with classes `text-nav-accent no-underline ml-4 text-sm`; `nav-accent` (`#90caf9`) is defined in `tailwind.config.js`
+- Active route indicator: Explore link gains `border-b-2 border-nav-accent pb-0.5` via a Tailwind `className` ternary comparing `useLocation().pathname` to `/explore`
 - Below AppBar: `<Outlet />` renders the matched child route
 
 ### Landing.tsx
@@ -71,7 +73,8 @@ Add `react-router-dom` to `frontend/package.json` dependencies. No other new dep
 
 - `App.test.tsx` — updated to use `MemoryRouter`; verifies `/` renders Landing content and `/explore` renders the Explore heading
 - `Landing.test.tsx` — new: moves existing App tests (Hello Redslim heading, API message) here
-- No tests for `Layout.tsx` or `Explore.tsx` beyond what `App.test.tsx` covers via routing
+- `Layout.test.tsx` — 2 tests verifying the Explore link active-state indicator is applied at `/explore` and absent elsewhere
+- No tests for `Explore.tsx` beyond what `App.test.tsx` covers via routing
 
 ## Out of scope
 
