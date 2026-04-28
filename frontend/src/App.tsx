@@ -1,29 +1,16 @@
-import { useState, useEffect } from 'react'
-import { Typography, Container, Box } from '@mui/material'
-import apiClient from './api/client'
+import { Routes, Route } from 'react-router-dom'
+import Layout from './components/Layout'
+import Landing from './pages/Landing'
+import Explore from './pages/Explore'
 
 function App() {
-  const [message, setMessage] = useState<string | null>(null)
-
-  useEffect(() => {
-    apiClient.get('/redslim-hello')
-      .then(res => setMessage(res.data.message))
-      .catch(() => setMessage('Could not reach the server.'))
-  }, [])
-
   return (
-    <Container maxWidth="sm">
-      <Box sx={{ mt: 8 }}>
-        <Typography variant="h2" component="h1">
-          Hello Redslim
-        </Typography>
-        {message && (
-          <Typography variant="body1" data-testid="api-message">
-            {message}
-          </Typography>
-        )}
-      </Box>
-    </Container>
+    <Routes>
+      <Route element={<Layout />}>
+        <Route path="/" element={<Landing />} />
+        <Route path="/explore" element={<Explore />} />
+      </Route>
+    </Routes>
   )
 }
 

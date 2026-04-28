@@ -1,36 +1,31 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import App from './App'
 import apiClient from './api/client'
 
 jest.mock('./api/client', () => ({
   __esModule: true,
-  default: {
-    get: jest.fn()
-  }
+  default: { get: jest.fn() }
 }))
 
 beforeEach(() => {
-  jest.mocked(apiClient.get).mockReset()
+  jest.mocked(apiClient.get).mockReturnValue(new Promise(() => {}))
 })
 
-test('renders Hello Redslim heading', () => {
-  jest.mocked(apiClient.get).mockReturnValue(new Promise(() => {}))
-  render(<App />)
+test('renders Landing page at /', () => {
+  render(
+    <MemoryRouter initialEntries={['/']}>
+      <App />
+    </MemoryRouter>
+  )
   expect(screen.getByRole('heading', { name: /hello redslim/i })).toBeInTheDocument()
 })
 
-test('displays API response message', async () => {
-  jest.mocked(apiClient.get).mockResolvedValue({ data: { message: 'Hello Redslim' } })
-  render(<App />)
-  await waitFor(() => {
-    expect(screen.getByTestId('api-message')).toHaveTextContent('Hello Redslim')
-  })
-})
-
-test('displays error message when API fails', async () => {
-  jest.mocked(apiClient.get).mockRejectedValue(new Error('Network Error'))
-  render(<App />)
-  await waitFor(() => {
-    expect(screen.getByTestId('api-message')).toHaveTextContent('Could not reach the server.')
-  })
+test('renders Explore page at /explore', () => {
+  render(
+    <MemoryRouter initialEntries={['/explore']}>
+      <App />
+    </MemoryRouter>
+  )
+  expect(screen.getByRole('heading', { name: /explore/i })).toBeInTheDocument()
 })
