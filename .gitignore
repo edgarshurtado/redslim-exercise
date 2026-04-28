@@ -7,3 +7,4 @@ backend/.env
 *.pyc
 docs/data/*
 !docs/data/.gitkeep
+.superpowers/
