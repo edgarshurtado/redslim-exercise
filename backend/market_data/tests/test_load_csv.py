@@ -179,6 +179,21 @@ def test_decimal_value_is_stored_exactly(write_csv):
 
 
 @pytest.mark.django_db
+def test_non_item_level_rows_are_skipped(write_csv):
+    item_row = "MARKET3,1000,94.00,PRODUCT ITEM,ITEM,CHS,MFG,BRAND A,SUB A,FAMILY,400-499G,400.0,CHUNKY,AUG16 4WKS 04/09/16,TOT RETAILER 1,2016-09-04"
+    total_row = "MARKET3,9999,99.00,PRODUCT TOTAL,TOTAL,CHS,MFG,BRAND B,SUB B,FAMILY,400-499G,400.0,CHUNKY,AUG16 4WKS 04/09/16,TOT RETAILER 1,2016-09-04"
+    filename = write_csv("test_level_filter.csv", "\n".join([CSV_HEADER, item_row, total_row]))
+
+    out = io.StringIO()
+    call_command("load_csv", filename, stdout=out)
+
+    assert Data.objects.count() == 1
+    assert Data.objects.filter(product__description="PRODUCT ITEM").exists()
+    assert not Data.objects.filter(product__description="PRODUCT TOTAL").exists()
+    assert "Loaded 1 rows" in out.getvalue()
+
+
+@pytest.mark.django_db
 def test_empty_wtd_stores_null(write_csv):
     row = "MARKET3,1000,,CHS ORGANIC TREE UT PLUS UT VETO BRETS FAMILY 400,ITEM,CHS,ORGANIC TREE,UT PLUS,UT VETO BRETS,FAMILY,400-499G,400.0,CHUNKY,AUG16 4WKS 04/09/16,TOT RETAILER 1,2016-09-04"
     filename = write_csv("test_empty_wtd.csv", "\n".join([CSV_HEADER, row]))

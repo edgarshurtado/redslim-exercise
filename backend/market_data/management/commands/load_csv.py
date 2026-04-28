@@ -32,6 +32,9 @@ class Command(BaseCommand):
         with transaction.atomic():
             with open(csv_path, newline="", encoding="utf-8") as f:
                 for row in csv.DictReader(f):
+                    if row["LEVEL"] != "ITEM":
+                        continue
+
                     brand_key = row["BRAND"]
                     if brand_key not in brand_cache:
                         brand, _ = Brand.objects.get_or_create(description=row["BRAND"])

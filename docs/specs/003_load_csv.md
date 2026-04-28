@@ -65,6 +65,10 @@ One cache dict per dimension:
 
 `Data` rows are not cached.
 
+### Row Filtering
+
+Only rows where `LEVEL == "ITEM"` are processed. All other rows are silently skipped.
+
 ### Per-Row Processing Order
 
 FK dependencies are resolved bottom-up before inserting `Data`:
@@ -107,6 +111,7 @@ All errors are all-or-nothing — no partial imports.
 4. `Data` rows are unique on `(market, product, date)`.
 5. A CSV with an invalid `TIME` column (no `WKS` pattern) aborts with no rows persisted.
 6. A non-existent filename raises a clear error before touching the database.
+7. Rows where `LEVEL != "ITEM"` are silently skipped and do not produce any dimension or `Data` rows.
 
 ---
 
@@ -123,3 +128,4 @@ All errors are all-or-nothing — no partial imports.
 | 5 | Invalid TIME | Row with no `WKS` in `TIME`; assert error raised and all tables empty (full rollback) |
 | 6 | File not found | Non-existent filename; assert `CommandError` raised |
 | 7 | Empty WTD | Row with empty `WTD` column; assert `Data` row is created with `weighted_distribution = None` |
+| 8 | Level filter | Mix of `ITEM` and non-`ITEM` rows; assert only the `ITEM` row produces a `Data` record |
