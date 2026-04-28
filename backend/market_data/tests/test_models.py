@@ -96,3 +96,21 @@ def test_data_cascades_on_product_delete(data_record):
     data_id = data_record.id
     data_record.product.delete()
     assert not Data.objects.filter(id=data_id).exists()
+
+
+@pytest.mark.django_db
+def test_data_weighted_distribution_can_be_null():
+    brand = Brand.objects.create(description="BRAND X")
+    subbrand = SubBrand.objects.create(description="SUBBRAND X", brand=brand)
+    product = Product.objects.create(description="PRODUCT X", sub_brand=subbrand)
+    market = Market.objects.create(description="MARKET X", description_2="RETAILER X")
+    data = Data.objects.create(
+        market=market,
+        product=product,
+        value=Decimal("100.00"),
+        weighted_distribution=None,
+        date=date(2016, 9, 4),
+        period_weeks=4,
+    )
+    data.refresh_from_db()
+    assert data.weighted_distribution is None
