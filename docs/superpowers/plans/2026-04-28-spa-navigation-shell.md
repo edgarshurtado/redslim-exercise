@@ -6,7 +6,7 @@
 
 **Architecture:** A `Layout` component holds the `AppBar` and renders child routes via `<Outlet />`. `App.tsx` owns the route configuration. `BrowserRouter` wraps `App` in `main.tsx`. Current landing content moves from `App.tsx` into `pages/Landing.tsx`.
 
-**Tech Stack:** React 19, React Router v6, MUI v9, TypeScript, Jest + Testing Library
+**Tech Stack:** React 19, React Router v7, MUI v9, TypeScript, Jest + Testing Library
 
 ---
 
