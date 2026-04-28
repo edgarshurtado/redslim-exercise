@@ -74,13 +74,18 @@ class Command(BaseCommand):
                     except InvalidOperation:
                         raise ValueError(f"Cannot parse value from VAL: {row['VAL']!r}")
 
+                    try:
+                        weighted_distribution = Decimal(row["WTD"])
+                    except InvalidOperation:
+                        raise ValueError(f"Cannot parse weighted_distribution from WTD: {row['WTD']!r}")
+
                     _, created = Data.objects.get_or_create(
                         market=market,
                         product=product,
                         date=datetime.date.fromisoformat(row["DATETIME"]),
                         defaults={
                             "value": value,
-                            "weighted_distribution": Decimal(row["WTD"]),
+                            "weighted_distribution": weighted_distribution,
                             "period_weeks": int(match.group(1)),
                         },
                     )

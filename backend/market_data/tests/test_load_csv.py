@@ -145,6 +145,24 @@ def test_invalid_time_rolls_back(write_csv):
 
 
 @pytest.mark.django_db
+def test_invalid_wtd_rolls_back(write_csv):
+    valid_row = "MARKET3,1000,94.00,PRODUCT VALID,ITEM,CHS,MFG,BRAND VALID,SUB VALID,FAMILY,400-499G,400.0,CHUNKY,AUG16 4WKS 04/09/16,TOT RETAILER 1,2016-09-04"
+    invalid_row = "MARKET3,2000,BADWTD,PRODUCT INVALID,ITEM,CHS,MFG,BRAND INVALID,SUB INVALID,FAMILY,400-499G,400.0,CHUNKY,AUG16 4WKS 04/09/16,TOT RETAILER 1,2016-09-04"
+    filename = write_csv(
+        "test_invalid_wtd.csv", "\n".join([CSV_HEADER, valid_row, invalid_row])
+    )
+
+    with pytest.raises(ValueError, match="Cannot parse weighted_distribution"):
+        call_command("load_csv", filename)
+
+    assert Brand.objects.count() == 0
+    assert SubBrand.objects.count() == 0
+    assert Product.objects.count() == 0
+    assert Market.objects.count() == 0
+    assert Data.objects.count() == 0
+
+
+@pytest.mark.django_db
 def test_file_not_found():
     with pytest.raises(CommandError, match="File not found"):
         call_command("load_csv", "nonexistent_file_xyz.csv")
