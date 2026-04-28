@@ -74,10 +74,14 @@ class Command(BaseCommand):
                     except InvalidOperation:
                         raise ValueError(f"Cannot parse value from VAL: {row['VAL']!r}")
 
-                    try:
-                        weighted_distribution = Decimal(row["WTD"])
-                    except InvalidOperation:
-                        raise ValueError(f"Cannot parse weighted_distribution from WTD: {row['WTD']!r}")
+                    wtd_raw = row["WTD"].strip()
+                    if wtd_raw:
+                        try:
+                            weighted_distribution = Decimal(wtd_raw)
+                        except InvalidOperation:
+                            raise ValueError(f"Cannot parse weighted_distribution from WTD: {row['WTD']!r}")
+                    else:
+                        weighted_distribution = None
 
                     _, created = Data.objects.get_or_create(
                         market=market,

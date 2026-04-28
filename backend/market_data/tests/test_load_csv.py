@@ -176,3 +176,14 @@ def test_decimal_value_is_stored_exactly(write_csv):
         product__description="CHS ORGANIC TREE UT PLUS UT VETO BRETS FAMILY 400"
     )
     assert data_row.value == Decimal("32.40")
+
+
+@pytest.mark.django_db
+def test_empty_wtd_stores_null(write_csv):
+    row = "MARKET3,1000,,CHS ORGANIC TREE UT PLUS UT VETO BRETS FAMILY 400,ITEM,CHS,ORGANIC TREE,UT PLUS,UT VETO BRETS,FAMILY,400-499G,400.0,CHUNKY,AUG16 4WKS 04/09/16,TOT RETAILER 1,2016-09-04"
+    filename = write_csv("test_empty_wtd.csv", "\n".join([CSV_HEADER, row]))
+    call_command("load_csv", filename)
+    data_row = Data.objects.get(
+        product__description="CHS ORGANIC TREE UT PLUS UT VETO BRETS FAMILY 400"
+    )
+    assert data_row.weighted_distribution is None
