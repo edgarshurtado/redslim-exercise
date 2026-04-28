@@ -80,7 +80,7 @@ class Command(BaseCommand):
                         date=datetime.date.fromisoformat(row["DATETIME"]),
                         defaults={
                             "value": value,
-                            "weighted_distribution": int(row["WTD"]),
+                            "weighted_distribution": Decimal(row["WTD"]),
                             "period_weeks": int(match.group(1)),
                         },
                     )
