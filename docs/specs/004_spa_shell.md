@@ -1,4 +1,4 @@
-# SPA Navigation Shell Design
+# Spec 004 - SPA Navigation Shell Design
 
 **Date:** 2026-04-28
 **Branch:** exploration_table
