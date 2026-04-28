@@ -22,12 +22,13 @@ function Layout() {
           </RouterLink>
           <RouterLink
             to="/explore"
+            aria-current={pathname === '/explore' ? 'page' : undefined}
             style={{
               color: '#90caf9',
               textDecoration: 'none',
               marginLeft: '16px',
               fontSize: '14px',
-              ...(pathname === '/explore' && { borderBottom: '2px solid #90caf9' }),
+              ...(pathname === '/explore' && { borderBottom: '2px solid #90caf9', paddingBottom: '2px' }),
             }}
           >
             Explore
