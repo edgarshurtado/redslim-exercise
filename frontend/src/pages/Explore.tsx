@@ -98,9 +98,11 @@ function Explore() {
 
   return (
     <Container maxWidth="xl" className="py-8">
-      <Typography variant="h4" component="h1" className="mb-4">
-        Explore
-      </Typography>
+      <div className="pb-4">
+        <Typography variant="h4" component="h1">
+          Explore
+        </Typography>
+      </div>
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
