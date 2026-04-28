@@ -1,8 +1,7 @@
-# Exploration Table Design
+# Spec 005 — Exploration Table Design
 
 **Date:** 2026-04-28
 **Branch:** exploration_table
-**Spec:** docs/specs/005_exploration_table.md
 
 ## Overview
 
@@ -21,7 +20,7 @@ Extends DRF `ReadOnlyModelViewSet`. Queryset uses `select_related('market', 'pro
 **Serializer** (`DataTableSerializer`) flattens the join into a single row:
 
 ```
-{ id, market, product, brand, sub_brand, value, date, period_weeks }
+{ id, market, product, brand, sub_brand, value, date, period_weeks, weighted_distribution }
 ```
 
 Field sources:
@@ -35,6 +34,7 @@ Field sources:
 | `value` | `value` |
 | `date` | `date` |
 | `period_weeks` | `period_weeks` |
+| `weighted_distribution` | `weighted_distribution` (nullable) |
 
 **Sorting** via DRF `OrderingFilter`. Allowed ordering fields map frontend params to ORM traversals:
 
@@ -47,6 +47,7 @@ Field sources:
 | `value` | `value` |
 | `date` | `date` |
 | `period_weeks` | `period_weeks` |
+| `weighted_distribution` | `weighted_distribution` |
 
 **Pagination** via DRF `PageNumberPagination`, page size 50. Default ordering: `-date` (most recent first).
 
@@ -105,6 +106,7 @@ interface DataRow {
   value: string
   date: string
   period_weeks: number
+  weighted_distribution: string | null
 }
 ```
 
@@ -114,7 +116,7 @@ An invisible `<div ref={sentinelRef} />` is placed **below** `TableContainer` (o
 
 ### Table structure
 
-MUI components: `TableContainer` → `Table` → `TableHead` / `TableBody`. Each of the 7 header cells uses `TableSortLabel` with `active` and `direction` props driven by state. Column order matches the spec:
+MUI components: `TableContainer` → `Table` → `TableHead` / `TableBody`. Each of the 8 header cells uses `TableSortLabel` with `active` and `direction` props driven by state. Column order matches the spec:
 
 1. Market
 2. Product
@@ -123,6 +125,7 @@ MUI components: `TableContainer` → `Table` → `TableHead` / `TableBody`. Each
 5. Sales Value
 6. Date
 7. Period (Weeks)
+8. Weighted Distribution
 
 ### Loading & empty states
 
@@ -142,7 +145,7 @@ MUI components: `TableContainer` → `Table` → `TableHead` / `TableBody`. Each
 
 ### Frontend (`frontend/src/pages/Explore.test.tsx`)
 
-- Renders all 7 column headers with mocked axios data
+- Renders all 8 column headers with mocked axios data
 - Clicking an inactive column header fires a request with the correct `ordering` param
 - Clicking the active column header toggles between `asc` and `desc`
 - `CircularProgress` is present while the initial fetch is in-flight
@@ -156,4 +159,3 @@ MUI components: `TableContainer` → `Table` → `TableHead` / `TableBody`. Each
 - Column visibility toggles
 - CSV/export functionality
 - Mobile-responsive table layout
-- The `weighted_distribution` field (not included in any column)
