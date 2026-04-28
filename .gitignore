@@ -5,3 +5,5 @@ backend/venv/
 backend/.env
 **/__pycache__/
 *.pyc
+docs/data/*
+!docs/data/.gitkeep
