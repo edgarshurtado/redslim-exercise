@@ -19,7 +19,7 @@ Relevant columns:
 | `M Desc` | Primary market identifier (e.g. `"MARKET3"`) |
 | `M Desc 2` | Secondary market / retailer description (e.g. `"TOT RETAILER 1"`) |
 | `VAL` | Sales value (decimal) |
-| `WTD` | Weighted distribution percentage (e.g. `85.85` = 85.85%) |
+| `WTD` | Weighted distribution percentage (e.g. `85.85` = 85.85%); may be empty |
 | `Product` | Full product description |
 | `BRAND` | Brand name |
 | `SUBBRAND` | Sub-brand name |
@@ -80,7 +80,7 @@ FK dependencies are resolved bottom-up before inserting `Data`:
 | Model field | Source | Transformation |
 |---|---|---|
 | `Data.value` | `VAL` | `Decimal(row['VAL'])` |
-| `Data.weighted_distribution` | `WTD` | `Decimal(row['WTD'])` |
+| `Data.weighted_distribution` | `WTD` | `Decimal(row['WTD']) if row['WTD'].strip() else None` |
 | `Data.date` | `DATETIME` | `datetime.date.fromisoformat(row['DATETIME'])` |
 | `Data.period_weeks` | `TIME` | `int(re.search(r'(\d+)WKS', row['TIME']).group(1))` — raises `ValueError` if no match |
 
@@ -92,6 +92,7 @@ FK dependencies are resolved bottom-up before inserting `Data`:
 |---|---|
 | File not found | Command raises `CommandError` before opening the DB transaction |
 | `TIME` column has no `WKS` pattern | `ValueError` propagates; transaction rolls back |
+| `WTD` column is empty | `Data.weighted_distribution` stored as `NULL`; row is kept |
 | Any other exception during import | Exception propagates; transaction rolls back |
 
 All errors are all-or-nothing — no partial imports.
@@ -121,3 +122,4 @@ All errors are all-or-nothing — no partial imports.
 | 4 | Cache effectiveness | N rows sharing all dimension values; use `CaptureQueriesContext` to assert query count == 28 (4 dim SELECT+INSERT on first row only, + N × 2 Data SELECT+INSERT) |
 | 5 | Invalid TIME | Row with no `WKS` in `TIME`; assert error raised and all tables empty (full rollback) |
 | 6 | File not found | Non-existent filename; assert `CommandError` raised |
+| 7 | Empty WTD | Row with empty `WTD` column; assert `Data` row is created with `weighted_distribution = None` |
