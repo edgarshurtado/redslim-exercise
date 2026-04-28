@@ -9,6 +9,7 @@ jest.mock('./api/client', () => ({
 }))
 
 beforeEach(() => {
+  jest.mocked(apiClient.get).mockReset()
   jest.mocked(apiClient.get).mockReturnValue(new Promise(() => {}))
 })
 
