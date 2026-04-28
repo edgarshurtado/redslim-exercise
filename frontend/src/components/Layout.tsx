@@ -11,26 +11,14 @@ function Layout() {
           <RouterLink
             to="/"
             aria-current={pathname === '/' ? 'page' : undefined}
-            style={{
-              color: '#fff',
-              fontWeight: 700,
-              fontSize: '16px',
-              letterSpacing: '0.3px',
-              textDecoration: 'none',
-            }}
+            className="text-white font-bold text-base tracking-[0.3px] no-underline"
           >
             Edgar's ReadSlim Exercise
           </RouterLink>
           <RouterLink
             to="/explore"
             aria-current={pathname === '/explore' ? 'page' : undefined}
-            style={{
-              color: '#90caf9',
-              textDecoration: 'none',
-              marginLeft: '16px',
-              fontSize: '14px',
-              ...(pathname === '/explore' && { borderBottom: '2px solid #90caf9', paddingBottom: '2px' }),
-            }}
+            className={`text-nav-accent no-underline ml-4 text-sm ${pathname === '/explore' ? 'border-b-2 border-nav-accent pb-0.5' : ''}`}
           >
             Explore
           </RouterLink>
