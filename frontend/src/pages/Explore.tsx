@@ -15,7 +15,7 @@ import {
 } from '@mui/material'
 import apiClient from '../api/client'
 
-interface DataRow {
+type DataRow = {
   id: number
   market: string
   product: string
