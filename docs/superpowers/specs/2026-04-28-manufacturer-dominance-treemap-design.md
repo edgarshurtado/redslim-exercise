@@ -25,7 +25,7 @@ Returns a flat JSON array — no pagination. Brand count is small enough to retu
 
 ### Aggregation logic
 
-Computed from the `Data` model, grouped by brand (`product__sub_brand__brand`):
+Computed from the `Data` model, grouped by brand (`product__sub_brand__brand`). **Rows whose brand description is an empty string are excluded before aggregation.**
 
 | Field | Formula |
 |---|---|
@@ -113,6 +113,7 @@ No retry logic — user reloads the page.
 | 1 | Happy path: known fixture data returns correct `total_value` and `weighted_avg_wtd` (verify the weighted math explicitly) |
 | 2 | Null WTD handling: brand with all-null WTD rows returns `weighted_avg_wtd: null` |
 | 3 | Mixed null/non-null WTD: only non-null rows contribute to the weighted average |
+| 4 | Empty brand exclusion: rows whose brand description is `""` are not included in the response |
 
 ### Frontend (`jest` + Testing Library)
 

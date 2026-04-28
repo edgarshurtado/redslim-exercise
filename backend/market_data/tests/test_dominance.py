@@ -93,3 +93,16 @@ def test_ordered_by_total_value_descending(api_client, market):
     assert len(data) == 2
     assert data[0]['brand'] == 'BIG'
     assert data[1]['brand'] == 'SMALL'
+
+
+@pytest.mark.django_db
+def test_empty_brand_rows_are_excluded(api_client, market):
+    _make_brand('REAL BRAND', 'SUB R', 'PROD R', market, [(5000, 50, datetime.date(2016, 9, 4))])
+    _make_brand('', 'SUB E', 'PROD E', market, [(9999, 80, datetime.date(2016, 9, 4))])
+
+    response = api_client.get('/market-data/dominance/')
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]['brand'] == 'REAL BRAND'

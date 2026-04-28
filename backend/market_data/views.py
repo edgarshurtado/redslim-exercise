@@ -68,7 +68,9 @@ class DataTableFormatViewSet(viewsets.ReadOnlyModelViewSet):
 
 class BrandDominanceView(APIView):
     def get(self, request):
-        qs = Data.objects.values(
+        qs = Data.objects.exclude(
+            product__sub_brand__brand__description=''
+        ).values(
             brand=F('product__sub_brand__brand__description')
         ).annotate(
             total_value=Sum('value'),
