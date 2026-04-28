@@ -31,8 +31,8 @@ erDiagram
         int id PK
         int market_fk FK
         int product_fk FK
-        int value
-        int weighted_distribution
+        decimal value
+        decimal weighted_distribution
         date date
         int period_weeks
     }
@@ -93,8 +93,8 @@ erDiagram
 | `id` | int (PK) | No | Auto-generated primary key |
 | `market_fk` | int (FK → Market) | No | Market where the measurement was taken — CASCADE on delete |
 | `product_fk` | int (FK → Product) | No | Product being measured — CASCADE on delete |
-| `value` | int | No | Sales value for the period |
-| `weighted_distribution` | int | No | Distribution reach × 100 (e.g. `9400` = 94%) |
+| `value` | decimal(12,2) | No | Sales value for the period |
+| `weighted_distribution` | decimal(5,2) | No | Weighted distribution percentage (e.g. `85.85` = 85.85%) |
 | `date` | date | No | End date of the reporting period |
 | `period_weeks` | int | No | Duration of the reporting period in weeks |
 
@@ -105,5 +105,5 @@ erDiagram
 1. All five tables exist in the PostgreSQL database: `brand`, `subbrand`, `product`, `market`, `sales_data`.
 2. All foreign keys use `ON DELETE CASCADE`: deleting a `Brand` cascades to its `SubBrand` rows, then to `Product`, then to `Data`; deleting a `Market` cascades to its `Data` rows.
 3. No nullable fields — all columns have `NOT NULL` constraints.
-4. `Data.weighted_distribution` stores values multiplied by 100 (e.g. `9400` for 94%) — no decimal columns.
+4. `Data.value` is stored as `decimal(12, 2)` (e.g. `32.40`). `Data.weighted_distribution` is stored as `decimal(5, 2)` representing a percentage (e.g. `85.85` = 85.85%).
 5. Django migrations apply cleanly against the PostgreSQL instance defined in spec 001 (`redslim-exercise` DB, `redslim` user).

@@ -18,8 +18,8 @@ Relevant columns:
 |---|---|
 | `M Desc` | Primary market identifier (e.g. `"MARKET3"`) |
 | `M Desc 2` | Secondary market / retailer description (e.g. `"TOT RETAILER 1"`) |
-| `VAL` | Sales value (integer) |
-| `WTD` | Weighted distribution × 100 (e.g. `9400` = 94%) |
+| `VAL` | Sales value (decimal) |
+| `WTD` | Weighted distribution percentage (e.g. `85.85` = 85.85%) |
 | `Product` | Full product description |
 | `BRAND` | Brand name |
 | `SUBBRAND` | Sub-brand name |
@@ -79,8 +79,8 @@ FK dependencies are resolved bottom-up before inserting `Data`:
 
 | Model field | Source | Transformation |
 |---|---|---|
-| `Data.value` | `VAL` | `int(row['VAL'])` |
-| `Data.weighted_distribution` | `WTD` | `int(row['WTD'])` |
+| `Data.value` | `VAL` | `Decimal(row['VAL'])` |
+| `Data.weighted_distribution` | `WTD` | `Decimal(row['WTD'])` |
 | `Data.date` | `DATETIME` | `datetime.date.fromisoformat(row['DATETIME'])` |
 | `Data.period_weeks` | `TIME` | `int(re.search(r'(\d+)WKS', row['TIME']).group(1))` — raises `ValueError` if no match |
 
