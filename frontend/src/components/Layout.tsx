@@ -10,6 +10,7 @@ function Layout() {
         <Toolbar sx={{ px: 4 }}>
           <RouterLink
             to="/"
+            aria-current={pathname === '/' ? 'page' : undefined}
             style={{
               color: '#fff',
               fontWeight: 700,
