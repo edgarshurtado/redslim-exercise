@@ -24,6 +24,7 @@ frontend/
     pages/
       Landing.tsx       — new: current App content moved here
       Explore.tsx       — new: placeholder page
+      Dominance.tsx     — new: manufacturer dominance treemap page
     api/client.ts       — unchanged
 ```
 
@@ -35,6 +36,7 @@ frontend/
     <Route element={<Layout />}>
       <Route path="/" element={<Landing />} />
       <Route path="/explore" element={<Explore />} />
+      <Route path="/dominance" element={<Dominance />} />
     </Route>
   </Routes>
 </BrowserRouter>
@@ -48,7 +50,8 @@ frontend/
 - Navbar background: `#1a1a2e` (dark navy)
 - Left: app title "Edgar's ReadSlim Exercise" — a `RouterLink` to `/` with classes `text-white font-bold text-base tracking-[0.3px] no-underline`
 - Right of title: "Explore" link — a `RouterLink` to `/explore` with classes `text-nav-accent no-underline ml-4 text-sm`; `nav-accent` (`#90caf9`) is defined in `tailwind.config.js`
-- Active route indicator: Explore link gains `border-b-2 border-nav-accent pb-0.5` via a Tailwind `className` ternary comparing `useLocation().pathname` to `/explore`
+- Next: "Dominance" link — a `RouterLink` to `/dominance` with the same classes as "Explore"
+- Active route indicator: each nav link gains `border-b-2 border-nav-accent pb-0.5` via a Tailwind `className` ternary comparing `useLocation().pathname` to its respective path
 - Below AppBar: `<Outlet />` renders the matched child route
 
 ### Landing.tsx
