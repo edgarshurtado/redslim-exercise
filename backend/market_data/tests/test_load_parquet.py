@@ -370,3 +370,36 @@ def test_duplicate_input_rows_collapse(write_parquet_folder):
 
     assert Data.objects.count() == 1
     assert "Loaded 1 rows" in out.getvalue()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_rollback_on_data_bulk_create_error(write_parquet_folder, monkeypatch):
+    folder = write_parquet_folder(
+        "test_rollback",
+        mkt=mkt_df([("M1", "S", "L")]),
+        per=per_df([("P1", "2020-01-05")]),
+        prod=prod_df([("PR1", "PROD", "B1", "S1")]),
+        data=data_df([
+            {"MARKET_TAG": "M1", "PRODUCT_TAG": "PR1",
+             "PERIOD_TAG": "P1", "VAL": 1.0, "WTD": 50.0},
+        ]),
+    )
+
+    from django.db.models import Manager
+    original = Manager.bulk_create
+
+    def explode_for_data(self, objs, *args, **kwargs):
+        if self.model is Data:
+            raise RuntimeError("simulated mid-import failure")
+        return original(self, objs, *args, **kwargs)
+
+    monkeypatch.setattr(Manager, "bulk_create", explode_for_data)
+
+    with pytest.raises(RuntimeError, match="simulated mid-import failure"):
+        call_command("load_parquet", folder)
+
+    assert Brand.objects.count() == 0
+    assert SubBrand.objects.count() == 0
+    assert Product.objects.count() == 0
+    assert Market.objects.count() == 0
+    assert Data.objects.count() == 0
