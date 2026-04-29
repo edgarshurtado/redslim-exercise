@@ -66,6 +66,30 @@ class DataTableFormatViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = [_TableOrderingFilter]
 
 
+_EVOLUTION_FIELD_MAP = {
+    'brand': 'product__sub_brand__brand__description',
+    'product': 'product__description',
+    'market': 'market__description',
+}
+
+
+class EvolutionOptionsView(APIView):
+    def get(self, request):
+        category = request.query_params.get('category', '')
+        field = _EVOLUTION_FIELD_MAP.get(category)
+        if field is None:
+            return Response({'error': 'Invalid category'}, status=400)
+
+        values = (
+            Data.objects.filter(**{f'{field}__isnull': False})
+            .exclude(**{field: ''})
+            .order_by(field)
+            .values_list(field, flat=True)
+            .distinct()
+        )
+        return Response(list(values))
+
+
 class BrandDominanceView(APIView):
     def get(self, request):
         qs = Data.objects.exclude(
