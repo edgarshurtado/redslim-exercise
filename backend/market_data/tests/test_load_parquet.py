@@ -310,3 +310,21 @@ def test_nan_wtd_stored_as_null(write_parquet_folder):
     row = Data.objects.get()
     assert row.weighted_distribution is None
     assert row.value == Decimal("1000000.00")
+
+
+@pytest.mark.django_db
+def test_val_scaling(write_parquet_folder):
+    folder = write_parquet_folder(
+        "test_val_scale",
+        mkt=mkt_df([("M1", "S", "L")]),
+        per=per_df([("P1", "2020-01-05")]),
+        prod=prod_df([("PR1", "PROD", "B1", "S1")]),
+        data=data_df([
+            {"MARKET_TAG": "M1", "PRODUCT_TAG": "PR1",
+             "PERIOD_TAG": "P1", "VAL": 0.0011, "WTD": 50.0},
+        ]),
+    )
+    call_command("load_parquet", folder)
+
+    row = Data.objects.get()
+    assert row.value == Decimal("1100.00")
