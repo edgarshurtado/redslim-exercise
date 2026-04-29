@@ -39,7 +39,7 @@ Rows where the resolved field is null or empty string are excluded. Returns `400
 GET /market-data/evolution/chart/?category=<brand|product|market>&value=<string>
 ```
 
-Filters `Data` rows to those matching `value` for the given category (same null/empty exclusion), groups by `date__year`, sums `value`, and returns results sorted ascending by year.
+Filters `Data` rows to those matching `value` for the given category (same null/empty exclusion), groups by `date__year`, sums `value`, and returns results sorted ascending by year. Returns `400` if `category` is unknown or `value` is missing.
 
 **Response shape:**
 ```json
