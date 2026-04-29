@@ -1,4 +1,4 @@
-# Manufacturer Dominance Treemap — Design Spec
+# Spec 006 - Manufacturer Dominance Treemap — Design Spec
 
 **Date:** 2026-04-28
 
