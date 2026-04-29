@@ -65,3 +65,46 @@ describe('Evolution page — initial state', () => {
     expect(mockedGet).not.toHaveBeenCalled()
   })
 })
+
+describe('Evolution page — options fetch', () => {
+  beforeEach(() => mockedGet.mockReset())
+  afterEach(() => jest.clearAllMocks())
+
+  it('fetches brand options and enables Value select after Category is chosen', async () => {
+    mockedGet.mockResolvedValue({ data: ['Brand A', 'Brand B'] })
+    renderPage()
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'Category' }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Brand' }))
+
+    await waitFor(() =>
+      expect(mockedGet).toHaveBeenCalledWith(
+        '/market-data/evolution/options/?category=brand'
+      )
+    )
+
+    await waitFor(() =>
+      expect(screen.getByRole('combobox', { name: 'Value' })).not.toHaveAttribute('aria-disabled', 'true')
+    )
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'Value' }))
+    expect(await screen.findByRole('option', { name: 'Brand A' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Brand B' })).toBeInTheDocument()
+  })
+
+  it('Value select stays disabled while options are loading', async () => {
+    mockedGet.mockReturnValue(new Promise(() => {}))
+    renderPage()
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'Category' }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Market' }))
+
+    await waitFor(() =>
+      expect(mockedGet).toHaveBeenCalledWith(
+        '/market-data/evolution/options/?category=market'
+      )
+    )
+
+    expect(screen.getByRole('combobox', { name: 'Value' })).toHaveAttribute('aria-disabled', 'true')
+  })
+})
