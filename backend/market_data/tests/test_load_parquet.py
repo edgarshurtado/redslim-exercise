@@ -403,3 +403,20 @@ def test_rollback_on_data_bulk_create_error(write_parquet_folder, monkeypatch):
     assert Product.objects.count() == 0
     assert Market.objects.count() == 0
     assert Data.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_duplicate_tag_in_per_raises(write_parquet_folder):
+    folder = write_parquet_folder(
+        "test_dup_tag",
+        mkt=mkt_df([("M1", "S", "L")]),
+        per=per_df([("P1", "2020-01-05"), ("P1", "2020-02-02")]),  # duplicate
+        prod=prod_df([("PR1", "PROD", "B1", "S1")]),
+        data=data_df([
+            {"MARKET_TAG": "M1", "PRODUCT_TAG": "PR1",
+             "PERIOD_TAG": "P1", "VAL": 1.0, "WTD": 50.0},
+        ]),
+    )
+    with pytest.raises(CommandError, match="Duplicate TAG"):
+        call_command("load_parquet", folder)
+    assert Brand.objects.count() == 0

@@ -24,6 +24,15 @@ PERIOD_WEEKS = 4
 TWO_DP = Decimal("0.01")
 
 
+def _ensure_unique_tags(df, file_label):
+    """Raise CommandError if `df.TAG` has any duplicate values."""
+    duplicated = df["TAG"][df["TAG"].duplicated()].unique()
+    if len(duplicated) > 0:
+        raise CommandError(
+            f"Duplicate TAG values in {file_label}: {list(duplicated)[:5]}"
+        )
+
+
 class Command(BaseCommand):
     help = "Load retail sales data from parquet files in docs/data/<foldername>/"
 
@@ -48,6 +57,10 @@ class Command(BaseCommand):
             mkt_df = pd.read_parquet(paths["mkt"])
             per_df = pd.read_parquet(paths["per"])
             prod_df = pd.read_parquet(paths["prod"])
+
+            _ensure_unique_tags(mkt_df, paths["mkt"].name)
+            _ensure_unique_tags(per_df, paths["per"].name)
+            _ensure_unique_tags(prod_df, paths["prod"].name)
 
             prod_df = prod_df[prod_df["LEVEL"] == LEAF_LEVEL]
             if prod_df.empty:
