@@ -204,7 +204,11 @@ describe('Evolution page — category reset', () => {
     )
     expect(screen.queryByTestId('bar-chart')).not.toBeInTheDocument()
 
-    // Value select is disabled again (no value selected)
-    expect(screen.getByRole('combobox', { name: 'Value' })).toHaveAttribute('aria-disabled', 'true')
+    // Value select is re-enabled with new Market options
+    await waitFor(() =>
+      expect(screen.getByRole('combobox', { name: 'Value' })).not.toHaveAttribute('aria-disabled', 'true')
+    )
+    await userEvent.click(screen.getByRole('combobox', { name: 'Value' }))
+    expect(await screen.findByRole('option', { name: 'Market 1' })).toBeInTheDocument()
   })
 })
