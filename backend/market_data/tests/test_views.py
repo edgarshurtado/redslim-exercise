@@ -1,5 +1,5 @@
 import pytest
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from rest_framework.test import APIClient
 from market_data.models import Brand, SubBrand, Product, Market, Data
@@ -41,7 +41,7 @@ def fifty_one_records(db):
         Data(
             market=market, product=product,
             value=Decimal("1.00"),
-            date=date(2020, 1, (i % 28) + 1),
+            date=date(2020, 1, 1) + timedelta(days=i),
             period_weeks=4,
         )
         for i in range(51)
