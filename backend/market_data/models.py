@@ -6,6 +6,12 @@ class Brand(models.Model):
 
     class Meta:
         db_table = 'brand'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['description'],
+                name='uniq_brand_description',
+            ),
+        ]
 
 
 class SubBrand(models.Model):
@@ -14,6 +20,12 @@ class SubBrand(models.Model):
 
     class Meta:
         db_table = 'subbrand'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['description', 'brand'],
+                name='uniq_subbrand_description_brand',
+            ),
+        ]
 
 
 class Product(models.Model):
@@ -22,6 +34,12 @@ class Product(models.Model):
 
     class Meta:
         db_table = 'product'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['description', 'sub_brand'],
+                name='uniq_product_description_subbrand',
+            ),
+        ]
 
 
 class Market(models.Model):
@@ -30,6 +48,12 @@ class Market(models.Model):
 
     class Meta:
         db_table = 'market'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['description', 'description_2'],
+                name='uniq_market_descriptions',
+            ),
+        ]
 
 
 class Data(models.Model):
@@ -42,3 +66,9 @@ class Data(models.Model):
 
     class Meta:
         db_table = 'sales_data'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['market', 'product', 'date'],
+                name='uniq_data_market_product_date',
+            ),
+        ]
