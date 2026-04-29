@@ -41,6 +41,7 @@ def fifty_one_records(db):
         Data(
             market=market, product=product,
             value=Decimal("1.00"),
+            # Dates must be unique due to the uniq_data_market_product_date constraint.
             date=date(2020, 1, 1) + timedelta(days=i),
             period_weeks=4,
         )
