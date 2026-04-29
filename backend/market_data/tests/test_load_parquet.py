@@ -264,3 +264,28 @@ def test_empty_after_leaf_filter_raises(write_parquet_folder):
     with pytest.raises(CommandError, match="No leaf-level products"):
         call_command("load_parquet", folder)
     assert Brand.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_nan_val_skipped(write_parquet_folder):
+    import numpy as np
+
+    folder = write_parquet_folder(
+        "test_nan_val",
+        mkt=mkt_df([("M1", "S", "L")]),
+        per=per_df([("P1", "2020-01-05"), ("P2", "2020-02-02")]),
+        prod=prod_df([("PR1", "PROD", "B1", "S1")]),
+        data=data_df([
+            {"MARKET_TAG": "M1", "PRODUCT_TAG": "PR1",
+             "PERIOD_TAG": "P1", "VAL": np.nan, "WTD": 50.0},
+            {"MARKET_TAG": "M1", "PRODUCT_TAG": "PR1",
+             "PERIOD_TAG": "P2", "VAL": 1.0,    "WTD": 60.0},
+        ]),
+    )
+
+    out = io.StringIO()
+    call_command("load_parquet", folder, stdout=out)
+
+    assert Data.objects.count() == 1
+    assert Data.objects.first().date == datetime.date(2020, 2, 2)
+    assert "Loaded 1 rows" in out.getvalue()
