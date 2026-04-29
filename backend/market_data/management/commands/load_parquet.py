@@ -129,6 +129,10 @@ class Command(BaseCommand):
             ignore_conflicts=True,
         )
         brand_ids = list(brand_id_by_desc.values())
+        # Refetch is wider than this run's inserts (any prior SubBrand under
+        # these brands is also returned), but the (description, brand_id) →
+        # id dict is keyed by natural key so only the records we need ever
+        # get used downstream.
         return {
             (sb.description, sb.brand_id): sb.pk
             for sb in SubBrand.objects.filter(brand_id__in=brand_ids)
@@ -155,6 +159,9 @@ class Command(BaseCommand):
             (p.description, p.sub_brand_id): p.pk
             for p in Product.objects.filter(sub_brand_id__in=sub_brand_ids)
         }
+        # Same as _load_subbrands: refetch may include products from prior
+        # imports under the same sub-brands; only the (description,
+        # sub_brand_id) keys we look up below are ever consumed.
         return {
             tag: natural[
                 (
@@ -181,6 +188,9 @@ class Command(BaseCommand):
             (m.description, m.description_2): m.pk
             for m in Market.objects.filter(description__in=descs)
         }
+        # Refetch by description__in is wider than necessary; keying by
+        # (description, description_2) ensures only this run's TAGs map to
+        # IDs.
         return {
             tag: natural[(short, long_)]
             for tag, short, long_ in zip(
