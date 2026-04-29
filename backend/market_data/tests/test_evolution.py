@@ -89,3 +89,78 @@ def test_options_brand_excludes_empty_description(api_client, market):
 
     assert response.status_code == 200
     assert response.json() == ['REAL BRAND']
+
+
+@pytest.mark.django_db
+def test_options_missing_category_param_returns_400(api_client):
+    response = api_client.get('/market-data/evolution/options/')
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_chart_aggregates_value_by_calendar_year(api_client, market):
+    brand, _ = Brand.objects.get_or_create(description='BRD A')
+    sub, _ = SubBrand.objects.get_or_create(description='SUB A', brand=brand)
+    product, _ = Product.objects.get_or_create(description='PROD A', sub_brand=sub)
+    Data.objects.create(market=market, product=product, value=Decimal('1000'),
+                        date=datetime.date(2020, 3, 1), period_weeks=4)
+    Data.objects.create(market=market, product=product, value=Decimal('2000'),
+                        date=datetime.date(2020, 9, 1), period_weeks=4)
+    Data.objects.create(market=market, product=product, value=Decimal('3000'),
+                        date=datetime.date(2021, 1, 1), period_weeks=4)
+
+    response = api_client.get('/market-data/evolution/chart/?category=brand&value=BRD A')
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    assert data[0] == {'year': 2020, 'total': '3000.00'}
+    assert data[1] == {'year': 2021, 'total': '3000.00'}
+
+
+@pytest.mark.django_db
+def test_chart_results_sorted_ascending_by_year(api_client, market):
+    brand, _ = Brand.objects.get_or_create(description='BRD B')
+    sub, _ = SubBrand.objects.get_or_create(description='SUB B', brand=brand)
+    product, _ = Product.objects.get_or_create(description='PROD B', sub_brand=sub)
+    Data.objects.create(market=market, product=product, value=Decimal('500'),
+                        date=datetime.date(2022, 1, 1), period_weeks=4)
+    Data.objects.create(market=market, product=product, value=Decimal('100'),
+                        date=datetime.date(2019, 1, 1), period_weeks=4)
+
+    response = api_client.get('/market-data/evolution/chart/?category=brand&value=BRD B')
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data[0]['year'] == 2019
+    assert data[1]['year'] == 2022
+
+
+@pytest.mark.django_db
+def test_chart_missing_value_param_returns_400(api_client):
+    response = api_client.get('/market-data/evolution/chart/?category=brand')
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_chart_unknown_category_returns_400(api_client):
+    response = api_client.get('/market-data/evolution/chart/?category=foo&value=bar')
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_chart_excludes_rows_with_empty_brand(api_client, market):
+    real_brand, _ = Brand.objects.get_or_create(description='REAL')
+    empty_brand, _ = Brand.objects.get_or_create(description='')
+    for brand_obj, prod_name in [(real_brand, 'PROD R'), (empty_brand, 'PROD E')]:
+        sub, _ = SubBrand.objects.get_or_create(description=f'SUB_{prod_name}', brand=brand_obj)
+        product, _ = Product.objects.get_or_create(description=prod_name, sub_brand=sub)
+        Data.objects.create(market=market, product=product, value=Decimal('1000'),
+                            date=datetime.date(2020, 1, 1), period_weeks=4)
+
+    response = api_client.get('/market-data/evolution/chart/?category=brand&value=REAL')
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert Decimal(data[0]['total']) == Decimal('1000')

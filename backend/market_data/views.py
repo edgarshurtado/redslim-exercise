@@ -1,6 +1,7 @@
 from decimal import Decimal, ROUND_HALF_UP
 
 from django.db.models import DecimalField, ExpressionWrapper, F, Q, Sum
+from django.db.models.functions import ExtractYear
 from rest_framework import serializers, viewsets
 from rest_framework.filters import OrderingFilter
 from rest_framework.pagination import PageNumberPagination
@@ -88,6 +89,27 @@ class EvolutionOptionsView(APIView):
             .distinct()
         )
         return Response(list(values))
+
+
+class EvolutionChartView(APIView):
+    def get(self, request):
+        category = request.query_params.get('category', '')
+        value = request.query_params.get('value', '')
+        field = _EVOLUTION_FIELD_MAP.get(category)
+        if field is None or not value:
+            return Response({'error': 'Invalid parameters'}, status=400)
+
+        qs = (
+            Data.objects.filter(**{field: value})
+            .filter(**{f'{field}__isnull': False})
+            .exclude(**{field: ''})
+            .annotate(year=ExtractYear('date'))
+            .values('year')
+            .annotate(total=Sum('value'))
+            .order_by('year')
+        )
+        results = [{'year': row['year'], 'total': str(row['total'])} for row in qs]
+        return Response(results)
 
 
 class BrandDominanceView(APIView):
