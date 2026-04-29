@@ -110,3 +110,54 @@ def test_missing_required_file(write_parquet_folder, missing):
 
     assert Brand.objects.count() == 0
     assert Data.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_happy_path(write_parquet_folder):
+    folder = write_parquet_folder(
+        "test_happy",
+        mkt=mkt_df([
+            ("M1", "DK SOUTH", "DK SOUTHWEST"),
+            ("M2", "DK NORTH", "DK NORTHEAST"),
+            ("M3", "DK EAST",  "DK EAST"),
+        ]),
+        per=per_df([
+            ("P1", "2020-01-05"),
+            ("P2", "2020-02-02"),
+            ("P3", "2020-03-01"),
+        ]),
+        prod=prod_df([
+            ("PR1", "PRODUCT ONE",   "BRAND A", "SUB A"),
+            ("PR2", "PRODUCT TWO",   "BRAND A", "SUB B"),
+            ("PR3", "PRODUCT THREE", "BRAND B", "SUB C"),
+        ]),
+        data=data_df([
+            {"MARKET_TAG": "M1", "PRODUCT_TAG": "PR1", "PERIOD_TAG": "P1", "VAL": 0.0011, "WTD": 50.0},
+            {"MARKET_TAG": "M1", "PRODUCT_TAG": "PR2", "PERIOD_TAG": "P1", "VAL": 0.5,    "WTD": 60.0},
+            {"MARKET_TAG": "M2", "PRODUCT_TAG": "PR3", "PERIOD_TAG": "P2", "VAL": 1.0,    "WTD": 70.0},
+            {"MARKET_TAG": "M3", "PRODUCT_TAG": "PR1", "PERIOD_TAG": "P3", "VAL": 2.5,    "WTD": 80.0},
+            {"MARKET_TAG": "M3", "PRODUCT_TAG": "PR2", "PERIOD_TAG": "P2", "VAL": 0.001,  "WTD": 90.0},
+        ]),
+    )
+    out = io.StringIO()
+    call_command("load_parquet", folder, stdout=out)
+
+    assert Brand.objects.count() == 2
+    assert SubBrand.objects.count() == 3
+    assert Product.objects.count() == 3
+    assert Market.objects.count() == 3
+    assert Data.objects.count() == 5
+
+    row = Data.objects.get(
+        market__description="DK SOUTH",
+        product__description="PRODUCT ONE",
+        date=datetime.date(2020, 1, 5),
+    )
+    assert row.value == Decimal("1100.00")        # 0.0011 * 1_000_000
+    assert row.weighted_distribution == Decimal("50.00")
+    assert row.period_weeks == 4
+    assert row.market.description_2 == "DK SOUTHWEST"
+    assert row.product.sub_brand.description == "SUB A"
+    assert row.product.sub_brand.brand.description == "BRAND A"
+
+    assert "Loaded 5 rows from test_happy." in out.getvalue()
