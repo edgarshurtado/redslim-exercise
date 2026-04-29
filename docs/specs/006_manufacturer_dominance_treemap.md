@@ -85,6 +85,7 @@ If every row for a brand has a null `weighted_distribution`, `weighted_avg_wtd` 
 **Tooltip:**
 - Recharts `<Tooltip>` with a custom `content` prop
 - Shows on hover: brand name, formatted total sales value, WTD %
+- Sales value is formatted as currency using the unit defined for `Data.value` in spec 002 (DKK)
 
 **States:**
 - Loading: centered `<CircularProgress />` (same pattern as Explore)

@@ -89,10 +89,10 @@ Filters `Data` rows to those matching `value` for the given category (same null/
 
 **Chart:** Recharts `BarChart` inside `ResponsiveContainer` + `Paper`, following the same pattern as `Dominance.tsx`:
 - `XAxis` dataKey `year`
-- `YAxis` formatted as USD (no decimals)
+- `YAxis` formatted as currency (no decimals), using the unit defined for `Data.value` in spec 002 (DKK)
 - `Bar` dataKey `total`
 - `CartesianGrid` (dashed)
-- `Tooltip` formatted as USD currency
+- `Tooltip` formatted as currency, using the unit defined for `Data.value` in spec 002 (DKK)
 
 ---
 

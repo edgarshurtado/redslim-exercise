@@ -127,6 +127,8 @@ MUI components: `TableContainer` → `Table` → `TableHead` / `TableBody`. Each
 7. Period (Weeks)
 8. Weighted Distribution
 
+The Sales Value cell is formatted as currency using the unit defined for `Data.value` in spec 002 (DKK).
+
 ### Loading & empty states
 
 - `CircularProgress` centered below the last row while `loading` is true.
