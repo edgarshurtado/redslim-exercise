@@ -210,3 +210,57 @@ def test_brand_dedup(write_parquet_folder):
     assert Brand.objects.filter(description="SHARED BRAND").count() == 1
     assert SubBrand.objects.count() == 2
     assert Product.objects.count() == 2
+
+
+@pytest.mark.django_db
+def test_non_leaf_prod_filter(write_parquet_folder):
+    leaf = LEAF_LEVEL
+    aggregate = "MANUFACTURER!SEGMENT"
+
+    prod = pd.DataFrame([
+        {"TAG": "PR1", "SDESC": "LEAF",      "LEVEL": leaf,
+         "GL Brand": "B1", "GL Sub Brand": "S1"},
+        {"TAG": "PR2", "SDESC": "AGGREGATE", "LEVEL": aggregate,
+         "GL Brand": "ALL OTHER", "GL Sub Brand": "ALL OTHER"},
+    ])
+
+    folder = write_parquet_folder(
+        "test_non_leaf",
+        mkt=mkt_df([("M1", "S", "L")]),
+        per=per_df([("P1", "2020-01-05")]),
+        prod=prod,
+        data=data_df([
+            {"MARKET_TAG": "M1", "PRODUCT_TAG": "PR1",
+             "PERIOD_TAG": "P1", "VAL": 1.0, "WTD": 50.0},
+            {"MARKET_TAG": "M1", "PRODUCT_TAG": "PR2",
+             "PERIOD_TAG": "P1", "VAL": 9.0, "WTD": 99.0},
+        ]),
+    )
+    call_command("load_parquet", folder)
+
+    assert Product.objects.count() == 1
+    assert Product.objects.filter(description="LEAF").exists()
+    assert not Product.objects.filter(description="AGGREGATE").exists()
+    assert Data.objects.count() == 1
+    assert Data.objects.first().product.description == "LEAF"
+
+
+@pytest.mark.django_db
+def test_empty_after_leaf_filter_raises(write_parquet_folder):
+    only_aggregates = pd.DataFrame([
+        {"TAG": "PR1", "SDESC": "X", "LEVEL": "MANUFACTURER",
+         "GL Brand": "B", "GL Sub Brand": "S"},
+    ])
+    folder = write_parquet_folder(
+        "test_empty_leaf",
+        mkt=mkt_df([("M1", "S", "L")]),
+        per=per_df([("P1", "2020-01-05")]),
+        prod=only_aggregates,
+        data=data_df([
+            {"MARKET_TAG": "M1", "PRODUCT_TAG": "PR1",
+             "PERIOD_TAG": "P1", "VAL": 1.0, "WTD": 50.0},
+        ]),
+    )
+    with pytest.raises(CommandError, match="No leaf-level products"):
+        call_command("load_parquet", folder)
+    assert Brand.objects.count() == 0
