@@ -101,8 +101,6 @@ class EvolutionChartView(APIView):
 
         qs = (
             Data.objects.filter(**{field: value})
-            .filter(**{f'{field}__isnull': False})
-            .exclude(**{field: ''})
             .annotate(year=ExtractYear('date'))
             .values('year')
             .annotate(total=Sum('value'))
