@@ -3,6 +3,7 @@ import { Box, CircularProgress, Container, Paper, Typography } from '@mui/materi
 import { ResponsiveContainer, Treemap, Tooltip } from 'recharts'
 import type { TreemapNode as RechartsTreemapNode } from 'recharts'
 import apiClient from '../api/client'
+import { formatCurrency } from '../utils/currency'
 
 type BrandDatum = {
   brand: string
@@ -98,7 +99,7 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: Toolti
       </Typography>
       <Typography variant="body2">
         Sales:{' '}
-        {d.size.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}
+        {formatCurrency(d.size)}
       </Typography>
       {d.wtd !== null && (
         <Typography variant="body2">Wtd Dist: {d.wtd.toFixed(1)}%</Typography>
