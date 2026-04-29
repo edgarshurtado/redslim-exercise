@@ -328,3 +328,24 @@ def test_val_scaling(write_parquet_folder):
 
     row = Data.objects.get()
     assert row.value == Decimal("1100.00")
+
+
+@pytest.mark.django_db
+def test_dangling_tag_silent_skip(write_parquet_folder):
+    folder = write_parquet_folder(
+        "test_dangling",
+        mkt=mkt_df([("M1", "S", "L")]),
+        per=per_df([("P1", "2020-01-05")]),
+        prod=prod_df([("PR1", "PROD", "B1", "S1")]),
+        data=data_df([
+            {"MARKET_TAG": "M1",       "PRODUCT_TAG": "PR1", "PERIOD_TAG": "P1",       "VAL": 1.0, "WTD": 50.0},
+            {"MARKET_TAG": "UNKNOWN",  "PRODUCT_TAG": "PR1", "PERIOD_TAG": "P1",       "VAL": 1.0, "WTD": 50.0},
+            {"MARKET_TAG": "M1",       "PRODUCT_TAG": "X",   "PERIOD_TAG": "P1",       "VAL": 1.0, "WTD": 50.0},
+            {"MARKET_TAG": "M1",       "PRODUCT_TAG": "PR1", "PERIOD_TAG": "UNKNOWN",  "VAL": 1.0, "WTD": 50.0},
+        ]),
+    )
+    out = io.StringIO()
+    call_command("load_parquet", folder, stdout=out)
+
+    assert Data.objects.count() == 1
+    assert "Loaded 1 rows" in out.getvalue()
