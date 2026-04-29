@@ -115,10 +115,10 @@ rows = [
         market_id=market_id_by_tag[r.MARKET_TAG],
         product_id=product_id_by_tag[r.PRODUCT_TAG],
         date=date_by_tag[r.PERIOD_TAG],
-        value=Decimal(r.VAL * 1_000_000).quantize(Decimal("0.01")),
+        value=(Decimal(str(r.VAL)) * 1_000_000).quantize(Decimal("0.01")),
         weighted_distribution=(
             None if pd.isna(r.WTD)
-            else Decimal(r.WTD).quantize(Decimal("0.01"))
+            else Decimal(str(r.WTD)).quantize(Decimal("0.01"))
         ),
         period_weeks=4,
     )
@@ -147,8 +147,8 @@ self.stdout.write(f"Loaded {loaded} rows from {foldername}.")
 | `Product.description` | `prod.SDESC` | as-is; `sub_brand` from `(GL Sub Brand, GL Brand)` |
 | `Market.description` | `mkt.SHORT` | as-is |
 | `Market.description_2` | `mkt.LONG` | as-is |
-| `Data.value` | `data.VAL` | `Decimal(VAL * 1_000_000).quantize("0.01")`; row skipped if `VAL` is `NaN` |
-| `Data.weighted_distribution` | `data.WTD` | `Decimal(WTD).quantize("0.01")`; `NULL` if `NaN` |
+| `Data.value` | `data.VAL` | `(Decimal(str(VAL)) * 1_000_000).quantize("0.01")`; row skipped if `VAL` is `NaN` |
+| `Data.weighted_distribution` | `data.WTD` | `Decimal(str(WTD)).quantize("0.01")`; `NULL` if `NaN` |
 | `Data.date` | `per.DATETIME` (joined via `PERIOD_TAG`) | already a `datetime.date` |
 | `Data.period_weeks` | constant | `4` |
 
