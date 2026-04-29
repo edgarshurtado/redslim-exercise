@@ -75,6 +75,8 @@ _EVOLUTION_FIELD_MAP = {
 
 
 class EvolutionOptionsView(APIView):
+    pagination_class = _TablePagination
+
     def get(self, request):
         category = request.query_params.get('category', '')
         field = _EVOLUTION_FIELD_MAP.get(category)
@@ -88,7 +90,9 @@ class EvolutionOptionsView(APIView):
             .values_list(field, flat=True)
             .distinct()
         )
-        return Response(list(values))
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(values, request, view=self)
+        return paginator.get_paginated_response(list(page))
 
 
 class EvolutionChartView(APIView):

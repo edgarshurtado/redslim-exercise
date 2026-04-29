@@ -17,10 +17,10 @@ Both are `APIView` classes added to `market_data/views.py` and registered under 
 
 #### `EvolutionOptionsView`
 ```
-GET /market-data/evolution/options/?category=<brand|product|market>
+GET /market-data/evolution/options/?category=<brand|product|market>&page=<N>
 ```
 
-Returns a sorted list of distinct, non-empty string values for the requested category.
+Returns a sorted, paginated list of distinct, non-empty string values for the requested category. Pagination uses the existing `_TablePagination` (DRF `PageNumberPagination`, `page_size = 50`); the response follows the standard DRF envelope so the frontend can drive load-more off `next`.
 
 Category → ORM field mapping:
 - `brand` → `product__sub_brand__brand__description`
@@ -31,7 +31,12 @@ Rows where the resolved field is null or empty string are excluded. Returns `400
 
 **Response shape:**
 ```json
-["Brand A", "Brand B", "Brand C"]
+{
+  "count": 137,
+  "next": "http://.../market-data/evolution/options/?category=brand&page=2",
+  "previous": null,
+  "results": ["Brand A", "Brand B", "Brand C"]
+}
 ```
 
 #### `EvolutionChartView`
@@ -65,16 +70,20 @@ Filters `Data` rows to those matching `value` for the given category (same null/
 | Variable | Type | Purpose |
 |---|---|---|
 | `category` | `'brand' \| 'product' \| 'market' \| ''` | Selector 1 value |
-| `options` | `string[]` | Selector 2 option list |
+| `options` | `string[]` | Selector 2 option list, accumulated page-by-page |
+| `optionsPage` | `number` | Last options page loaded; starts at 0 |
+| `optionsHasMore` | `boolean` | True while the last response had a non-null `next` |
 | `selectedValue` | `string` | Selector 2 value |
 | `chartData` | `{ year: number; total: number }[]` | Aggregated chart data |
-| `loadingOptions` | `boolean` | Options fetch in-flight |
+| `loadingOptions` | `boolean` | Options fetch in-flight (initial OR subsequent page) |
 | `loadingChart` | `boolean` | Chart data fetch in-flight |
 
 **Behavior:**
 
-- Selector 2 is disabled until `category` is set.
-- When `category` changes: clear `selectedValue`, `chartData`, `options`; fetch new options.
+- Selector 2 is disabled while `category` is unset OR while the first page is loading and no options have been received yet.
+- When `category` changes: clear `selectedValue`, `chartData`, `options`; reset `optionsPage = 0`, `optionsHasMore = true`; fetch page 1.
+- When the open dropdown is scrolled near its bottom and `optionsHasMore`, fetch the next page and append to `options`.
+- A non-selectable spinner row is rendered at the end of the list while a subsequent page is loading.
 - When both selectors are set: fetch chart data.
 - Chart area shows a placeholder message until both selectors are set.
 - On data load: render chart.
@@ -101,8 +110,13 @@ Filters `Data` rows to those matching `value` for the given category (same null/
 ```
 User picks category (selector 1)
   → clear selectedValue, chartData, options
-  → GET /market-data/evolution/options/?category=<category>
-  → populate selector 2 options
+  → reset optionsPage=0, optionsHasMore=true
+  → GET /market-data/evolution/options/?category=<category>&page=1
+  → populate selector 2 options; set optionsHasMore from `next`
+
+User scrolls selector 2 dropdown near its bottom (and optionsHasMore)
+  → GET /market-data/evolution/options/?category=<category>&page=<optionsPage+1>
+  → append results to options; update optionsHasMore from `next`
 
 User picks value (selector 2)
   → GET /market-data/evolution/chart/?category=<category>&value=<value>
@@ -125,11 +139,14 @@ Backend returns `400` for unknown `category` query param values; the frontend tr
 ## Testing
 
 **Backend (pytest):**
-- `EvolutionOptionsView`: valid categories return sorted lists; unknown category returns 400; null/empty values excluded.
+- `EvolutionOptionsView`: valid categories return paginated, sorted lists; unknown category returns 400; null/empty values excluded.
+- `EvolutionOptionsView` pagination: first page returns up to 50 items with non-null `next` when more exist; second page returns the remaining items with `next` null and `previous` non-null.
 - `EvolutionChartView`: correct year aggregation; null/empty exclusion; results sorted by year ascending.
 
 **Frontend (Jest):**
 - Initial render: both selectors shown, chart area shows placeholder, selector 2 disabled.
-- After category select: options loaded, selector 2 enabled.
+- After category select: first page of options loaded, selector 2 enabled.
+- Scrolling near the bottom of the open dropdown triggers a page-2 fetch; appended options appear in the list.
+- When the response indicates no `next`, further scroll events do not fire additional requests.
 - After value select: chart renders with correct data.
-- Category change after chart render: selector 2 resets, chart clears.
+- Category change after chart render: selector 2 resets, chart clears, page state resets.

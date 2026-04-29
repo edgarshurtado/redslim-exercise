@@ -36,7 +36,11 @@ def test_options_brand_returns_sorted_list(api_client, market):
     response = api_client.get('/market-data/evolution/options/?category=brand')
 
     assert response.status_code == 200
-    assert response.json() == ['ALPHA', 'ZEBRA']
+    body = response.json()
+    assert body['results'] == ['ALPHA', 'ZEBRA']
+    assert body['count'] == 2
+    assert body['next'] is None
+    assert body['previous'] is None
 
 
 @pytest.mark.django_db
@@ -53,7 +57,7 @@ def test_options_product_returns_sorted_list(api_client, market):
     response = api_client.get('/market-data/evolution/options/?category=product')
 
     assert response.status_code == 200
-    assert response.json() == ['PROD A', 'PROD Z']
+    assert response.json()['results'] == ['PROD A', 'PROD Z']
 
 
 @pytest.mark.django_db
@@ -71,7 +75,7 @@ def test_options_market_returns_sorted_list(api_client, db):
     response = api_client.get('/market-data/evolution/options/?category=market')
 
     assert response.status_code == 200
-    assert response.json() == ['MARKET A', 'MARKET B']
+    assert response.json()['results'] == ['MARKET A', 'MARKET B']
 
 
 @pytest.mark.django_db
@@ -88,13 +92,46 @@ def test_options_brand_excludes_empty_description(api_client, market):
     response = api_client.get('/market-data/evolution/options/?category=brand')
 
     assert response.status_code == 200
-    assert response.json() == ['REAL BRAND']
+    assert response.json()['results'] == ['REAL BRAND']
 
 
 @pytest.mark.django_db
 def test_options_missing_category_param_returns_400(api_client):
     response = api_client.get('/market-data/evolution/options/')
     assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_options_first_page_returns_50_items_and_next_link(api_client, market):
+    for i in range(60):
+        _make_brand_data(f'BRAND {i:03d}', market)
+
+    response = api_client.get('/market-data/evolution/options/?category=brand')
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body['count'] == 60
+    assert len(body['results']) == 50
+    assert body['results'][0] == 'BRAND 000'
+    assert body['results'][-1] == 'BRAND 049'
+    assert body['next'] is not None
+    assert 'page=2' in body['next']
+
+
+@pytest.mark.django_db
+def test_options_second_page_returns_remaining_items(api_client, market):
+    for i in range(60):
+        _make_brand_data(f'BRAND {i:03d}', market)
+
+    response = api_client.get('/market-data/evolution/options/?category=brand&page=2')
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body['results']) == 10
+    assert body['results'][0] == 'BRAND 050'
+    assert body['results'][-1] == 'BRAND 059'
+    assert body['next'] is None
+    assert body['previous'] is not None
 
 
 @pytest.mark.django_db
