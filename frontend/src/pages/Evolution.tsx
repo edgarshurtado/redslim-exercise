@@ -156,12 +156,10 @@ function Evolution() {
               />
               <Bar dataKey="total" />
               <Tooltip
-                formatter={(v: number) =>
-                  v.toLocaleString('en-US', {
-                    style: 'currency',
-                    currency: 'USD',
-                    maximumFractionDigits: 0,
-                  })
+                formatter={(v) =>
+                  typeof v === 'number'
+                    ? v.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+                    : String(v ?? '')
                 }
               />
             </BarChart>
