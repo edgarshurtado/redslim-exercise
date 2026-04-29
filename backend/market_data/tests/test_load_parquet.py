@@ -88,3 +88,25 @@ def data_df(rows):
 def test_folder_not_found():
     with pytest.raises(CommandError, match="Folder not found"):
         call_command("load_parquet", "this_folder_does_not_exist_xyz")
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("missing", ["data", "mkt", "per", "prod"])
+def test_missing_required_file(write_parquet_folder, missing):
+    kwargs = {
+        "mkt": mkt_df([("M1", "S", "L")]),
+        "per": per_df([("P1", "2020-01-01")]),
+        "prod": prod_df([("PR1", "X", "B", "SB")]),
+        "data": data_df([
+            {"MARKET_TAG": "M1", "PRODUCT_TAG": "PR1",
+             "PERIOD_TAG": "P1", "VAL": 1.0, "WTD": 50.0},
+        ]),
+    }
+    kwargs[missing] = None
+    folder = write_parquet_folder("test_missing", **kwargs)
+
+    with pytest.raises(CommandError, match=f"_{missing}.parquet"):
+        call_command("load_parquet", folder)
+
+    assert Brand.objects.count() == 0
+    assert Data.objects.count() == 0
