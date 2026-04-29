@@ -113,6 +113,7 @@ function Evolution() {
             label="Value"
             value={selectedValue}
             onChange={(e) => setSelectedValue(e.target.value)}
+            displayEmpty
           >
             {options.map((opt) => (
               <MenuItem key={opt} value={opt}>
