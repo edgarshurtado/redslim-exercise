@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import Evolution from './Evolution'
@@ -29,6 +29,17 @@ jest.mock('../api/client', () => ({
   default: { get: jest.fn() },
 }))
 const mockedGet = apiClient.get as jest.Mock
+
+function optionsPage(results: string[], next: string | null = null, count?: number) {
+  return {
+    data: {
+      count: count ?? results.length,
+      next,
+      previous: null,
+      results,
+    },
+  }
+}
 
 function renderPage() {
   return render(
@@ -71,7 +82,7 @@ describe('Evolution page — options fetch', () => {
   afterEach(() => jest.clearAllMocks())
 
   it('fetches brand options and enables Value select after Category is chosen', async () => {
-    mockedGet.mockResolvedValue({ data: ['Brand A', 'Brand B'] })
+    mockedGet.mockResolvedValue(optionsPage(['Brand A', 'Brand B']))
     renderPage()
 
     await userEvent.click(screen.getByRole('combobox', { name: 'Category' }))
@@ -79,7 +90,7 @@ describe('Evolution page — options fetch', () => {
 
     await waitFor(() =>
       expect(mockedGet).toHaveBeenCalledWith(
-        '/market-data/evolution/options/?category=brand'
+        '/market-data/evolution/options/?category=brand&page=1'
       )
     )
 
@@ -101,11 +112,79 @@ describe('Evolution page — options fetch', () => {
 
     await waitFor(() =>
       expect(mockedGet).toHaveBeenCalledWith(
-        '/market-data/evolution/options/?category=market'
+        '/market-data/evolution/options/?category=market&page=1'
       )
     )
 
     expect(screen.getByRole('combobox', { name: 'Value' })).toHaveAttribute('aria-disabled', 'true')
+  })
+})
+
+describe('Evolution page — options pagination', () => {
+  beforeEach(() => mockedGet.mockReset())
+  afterEach(() => jest.clearAllMocks())
+
+  function scrollPaperToBottom() {
+    const paper = document.querySelector('.MuiMenu-paper') as HTMLElement
+    if (!paper) throw new Error('Menu paper not found')
+    Object.defineProperty(paper, 'scrollTop', { value: 1000, configurable: true })
+    Object.defineProperty(paper, 'clientHeight', { value: 300, configurable: true })
+    Object.defineProperty(paper, 'scrollHeight', { value: 1300, configurable: true })
+    fireEvent.scroll(paper)
+  }
+
+  it('fetches the next page when the dropdown is scrolled near the bottom', async () => {
+    mockedGet.mockImplementation((url: string) => {
+      if (url.includes('page=1')) {
+        return Promise.resolve(
+          optionsPage(['Brand A', 'Brand B'], '/market-data/evolution/options/?category=brand&page=2', 4)
+        )
+      }
+      if (url.includes('page=2')) {
+        return Promise.resolve(optionsPage(['Brand C', 'Brand D'], null, 4))
+      }
+      return Promise.reject(new Error(`unexpected url: ${url}`))
+    })
+    renderPage()
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'Category' }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Brand' }))
+    await waitFor(() =>
+      expect(screen.getByRole('combobox', { name: 'Value' })).not.toHaveAttribute('aria-disabled', 'true')
+    )
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'Value' }))
+    expect(await screen.findByRole('option', { name: 'Brand A' })).toBeInTheDocument()
+
+    scrollPaperToBottom()
+
+    await waitFor(() =>
+      expect(mockedGet).toHaveBeenCalledWith(
+        '/market-data/evolution/options/?category=brand&page=2'
+      )
+    )
+    expect(await screen.findByRole('option', { name: 'Brand C' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Brand D' })).toBeInTheDocument()
+  })
+
+  it('does not fetch more pages once next is null', async () => {
+    mockedGet.mockResolvedValue(optionsPage(['Only A', 'Only B']))
+    renderPage()
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'Category' }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Brand' }))
+    await waitFor(() =>
+      expect(screen.getByRole('combobox', { name: 'Value' })).not.toHaveAttribute('aria-disabled', 'true')
+    )
+    await userEvent.click(screen.getByRole('combobox', { name: 'Value' }))
+    expect(await screen.findByRole('option', { name: 'Only A' })).toBeInTheDocument()
+
+    expect(mockedGet).toHaveBeenCalledTimes(1)
+
+    scrollPaperToBottom()
+    scrollPaperToBottom()
+
+    expect(mockedGet).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -115,7 +194,7 @@ describe('Evolution page — chart render', () => {
 
   it('renders bar chart with year data after both selectors are set', async () => {
     mockedGet.mockImplementation((url: string) => {
-      if (url.includes('options')) return Promise.resolve({ data: ['Brand A'] })
+      if (url.includes('options')) return Promise.resolve(optionsPage(['Brand A']))
       if (url.includes('chart')) {
         return Promise.resolve({
           data: [
@@ -149,7 +228,7 @@ describe('Evolution page — chart render', () => {
 
   it('shows No data available when chart endpoint returns empty array', async () => {
     mockedGet.mockImplementation((url: string) => {
-      if (url.includes('options')) return Promise.resolve({ data: ['Brand A'] })
+      if (url.includes('options')) return Promise.resolve(optionsPage(['Brand A']))
       if (url.includes('chart')) return Promise.resolve({ data: [] })
       return Promise.reject(new Error(`unexpected url: ${url}`))
     })
@@ -173,7 +252,7 @@ describe('Evolution page — category reset', () => {
 
   it('resets Value select and clears chart when Category changes after chart is shown', async () => {
     mockedGet.mockImplementation((url: string) => {
-      if (url.includes('options')) return Promise.resolve({ data: ['Brand A'] })
+      if (url.includes('options')) return Promise.resolve(optionsPage(['Brand A']))
       if (url.includes('chart')) {
         return Promise.resolve({ data: [{ year: 2020, total: '1000.00' }] })
       }
@@ -192,7 +271,7 @@ describe('Evolution page — category reset', () => {
     await waitFor(() => expect(screen.getByTestId('bar-chart')).toBeInTheDocument())
 
     // Change Category to Market
-    mockedGet.mockResolvedValue({ data: ['Market 1'] })
+    mockedGet.mockResolvedValue(optionsPage(['Market 1']))
     await userEvent.click(screen.getByRole('combobox', { name: 'Category' }))
     await userEvent.click(await screen.findByRole('option', { name: 'Market' }))
 

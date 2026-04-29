@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Box,
   CircularProgress,
@@ -29,23 +29,41 @@ type ChartRow = {
   total: number
 }
 
+type OptionsResponse = {
+  count: number
+  next: string | null
+  previous: string | null
+  results: string[]
+}
+
+const SCROLL_THRESHOLD_PX = 50
+
 function Evolution() {
   const [category, setCategory] = useState<Category>('')
   const [options, setOptions] = useState<string[]>([])
+  const [optionsPage, setOptionsPage] = useState(0)
+  const [optionsHasMore, setOptionsHasMore] = useState(true)
   const [selectedValue, setSelectedValue] = useState('')
   const [chartData, setChartData] = useState<ChartRow[]>([])
   const [loadingOptions, setLoadingOptions] = useState(false)
   const [loadingChart, setLoadingChart] = useState(false)
+  const categoryRef = useRef<Category>('')
+
+  useEffect(() => {
+    categoryRef.current = category
+  }, [category])
 
   useEffect(() => {
     if (!category) return
     let cancelled = false
     setLoadingOptions(true)
     apiClient
-      .get<string[]>(`/market-data/evolution/options/?category=${category}`)
+      .get<OptionsResponse>(`/market-data/evolution/options/?category=${category}&page=1`)
       .then(({ data }) => {
         if (!cancelled) {
-          setOptions(data)
+          setOptions(data.results)
+          setOptionsPage(1)
+          setOptionsHasMore(data.next !== null)
           setLoadingOptions(false)
         }
       })
@@ -84,9 +102,40 @@ function Evolution() {
     setSelectedValue('')
     setChartData([])
     setOptions([])
+    setOptionsPage(0)
+    setOptionsHasMore(true)
+  }
+
+  const loadMoreOptions = () => {
+    if (!category || loadingOptions || !optionsHasMore) return
+    const nextPage = optionsPage + 1
+    const requestCategory = category
+    setLoadingOptions(true)
+    apiClient
+      .get<OptionsResponse>(
+        `/market-data/evolution/options/?category=${requestCategory}&page=${nextPage}`
+      )
+      .then(({ data }) => {
+        if (categoryRef.current !== requestCategory) return
+        setOptions((prev) => [...prev, ...data.results])
+        setOptionsPage(nextPage)
+        setOptionsHasMore(data.next !== null)
+        setLoadingOptions(false)
+      })
+      .catch(() => {
+        if (categoryRef.current === requestCategory) setLoadingOptions(false)
+      })
+  }
+
+  const handleMenuScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const t = e.currentTarget
+    if (t.scrollTop + t.clientHeight >= t.scrollHeight - SCROLL_THRESHOLD_PX) {
+      loadMoreOptions()
+    }
   }
 
   const bothSelected = category !== '' && selectedValue !== ''
+  const valueDisabled = !category || (loadingOptions && options.length === 0)
 
   return (
     <Container maxWidth="xl" className="py-8">
@@ -107,7 +156,7 @@ function Evolution() {
             <MenuItem value="market">Market</MenuItem>
           </Select>
         </FormControl>
-        <FormControl sx={{ minWidth: 220 }} disabled={!category || loadingOptions}>
+        <FormControl sx={{ minWidth: 220 }} disabled={valueDisabled}>
           <InputLabel id="value-label">Value</InputLabel>
           <Select
             labelId="value-label"
@@ -115,12 +164,29 @@ function Evolution() {
             value={selectedValue}
             onChange={(e) => setSelectedValue(e.target.value)}
             displayEmpty
+            MenuProps={{
+              slotProps: {
+                paper: {
+                  onScroll: handleMenuScroll,
+                  sx: { maxHeight: 300 },
+                },
+              },
+            }}
           >
             {options.map((opt) => (
               <MenuItem key={opt} value={opt}>
                 {opt}
               </MenuItem>
             ))}
+            {loadingOptions && options.length > 0 && (
+              <MenuItem
+                disabled
+                data-testid="value-loading-row"
+                className="justify-center"
+              >
+                <CircularProgress size={20} />
+              </MenuItem>
+            )}
           </Select>
         </FormControl>
       </div>
