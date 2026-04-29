@@ -161,3 +161,31 @@ def test_happy_path(write_parquet_folder):
     assert row.product.sub_brand.brand.description == "BRAND A"
 
     assert "Loaded 5 rows from test_happy." in out.getvalue()
+
+
+@pytest.mark.django_db
+def test_idempotency(write_parquet_folder):
+    folder = write_parquet_folder(
+        "test_idem",
+        mkt=mkt_df([("M1", "DK SOUTH", "DK SOUTHWEST")]),
+        per=per_df([("P1", "2020-01-05")]),
+        prod=prod_df([
+            ("PR1", "PROD ONE", "BRAND A", "SUB A"),
+            ("PR2", "PROD TWO", "BRAND A", "SUB B"),
+        ]),
+        data=data_df([
+            {"MARKET_TAG": "M1", "PRODUCT_TAG": "PR1", "PERIOD_TAG": "P1", "VAL": 1.0, "WTD": 50.0},
+            {"MARKET_TAG": "M1", "PRODUCT_TAG": "PR2", "PERIOD_TAG": "P1", "VAL": 2.0, "WTD": 60.0},
+        ]),
+    )
+
+    out = io.StringIO()
+    call_command("load_parquet", folder)
+    call_command("load_parquet", folder, stdout=out)
+
+    assert "Loaded 0 rows from test_idem." in out.getvalue()
+    assert Brand.objects.count() == 1
+    assert SubBrand.objects.count() == 2
+    assert Product.objects.count() == 2
+    assert Market.objects.count() == 1
+    assert Data.objects.count() == 2
