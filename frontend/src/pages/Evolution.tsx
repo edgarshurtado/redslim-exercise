@@ -20,6 +20,7 @@ import {
   Tooltip,
 } from 'recharts'
 import apiClient from '../api/client'
+import { formatCurrency } from '../utils/currency'
 
 type Category = 'brand' | 'product' | 'market' | ''
 
@@ -146,22 +147,10 @@ function Evolution() {
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="year" />
-              <YAxis
-                tickFormatter={(v: number) =>
-                  v.toLocaleString('en-US', {
-                    style: 'currency',
-                    currency: 'USD',
-                    maximumFractionDigits: 0,
-                  })
-                }
-              />
+              <YAxis tickFormatter={(v: number) => formatCurrency(v)} />
               <Bar dataKey="total" />
               <Tooltip
-                formatter={(v) =>
-                  typeof v === 'number'
-                    ? v.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
-                    : String(v ?? '')
-                }
+                formatter={(v) => (typeof v === 'number' ? formatCurrency(v) : String(v ?? ''))}
               />
             </BarChart>
           </ResponsiveContainer>
