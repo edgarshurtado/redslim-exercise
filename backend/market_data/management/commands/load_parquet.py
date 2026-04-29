@@ -67,6 +67,12 @@ class Command(BaseCommand):
                 raise CommandError(
                     f"No leaf-level products in {paths['prod'].name}"
                 )
+            prod_df = prod_df.dropna(subset=["SDESC", "GL Brand", "GL Sub Brand"])
+            if prod_df.empty:
+                raise CommandError(
+                    f"No leaf-level products with complete dimension data in "
+                    f"{paths['prod'].name}"
+                )
 
             brand_id_by_desc = self._load_brands(prod_df)
             subbrand_id_by_pair = self._load_subbrands(prod_df, brand_id_by_desc)

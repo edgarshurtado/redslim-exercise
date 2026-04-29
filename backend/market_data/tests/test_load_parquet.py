@@ -420,3 +420,35 @@ def test_duplicate_tag_in_per_raises(write_parquet_folder):
     with pytest.raises(CommandError, match="Duplicate TAG"):
         call_command("load_parquet", folder)
     assert Brand.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_nan_dimension_rows_dropped(write_parquet_folder):
+    import numpy as np
+
+    prod = pd.DataFrame([
+        {"TAG": "PR1", "SDESC": "GOOD",
+         "LEVEL": LEAF_LEVEL, "GL Brand": "B1", "GL Sub Brand": "S1"},
+        {"TAG": "PR2", "SDESC": "MISSING_SUB",
+         "LEVEL": LEAF_LEVEL, "GL Brand": "B1", "GL Sub Brand": np.nan},
+        {"TAG": "PR3", "SDESC": "MISSING_BRAND",
+         "LEVEL": LEAF_LEVEL, "GL Brand": np.nan, "GL Sub Brand": "S1"},
+    ])
+    folder = write_parquet_folder(
+        "test_nan_dim",
+        mkt=mkt_df([("M1", "S", "L")]),
+        per=per_df([("P1", "2020-01-05")]),
+        prod=prod,
+        data=data_df([
+            {"MARKET_TAG": "M1", "PRODUCT_TAG": "PR1",
+             "PERIOD_TAG": "P1", "VAL": 1.0, "WTD": 50.0},
+            {"MARKET_TAG": "M1", "PRODUCT_TAG": "PR2",
+             "PERIOD_TAG": "P1", "VAL": 1.0, "WTD": 50.0},
+            {"MARKET_TAG": "M1", "PRODUCT_TAG": "PR3",
+             "PERIOD_TAG": "P1", "VAL": 1.0, "WTD": 50.0},
+        ]),
+    )
+    call_command("load_parquet", folder)
+    assert Product.objects.count() == 1
+    assert Product.objects.filter(description="GOOD").exists()
+    assert Data.objects.count() == 1
