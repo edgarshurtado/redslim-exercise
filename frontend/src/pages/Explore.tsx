@@ -14,6 +14,7 @@ import {
   Typography,
 } from '@mui/material'
 import apiClient from '../api/client'
+import { formatCurrency } from '../utils/currency'
 
 type DataRow = {
   id: number
@@ -127,7 +128,7 @@ function Explore() {
                 <TableCell>{row.product}</TableCell>
                 <TableCell>{row.brand}</TableCell>
                 <TableCell>{row.sub_brand}</TableCell>
-                <TableCell>{row.value}</TableCell>
+                <TableCell>{formatCurrency(parseFloat(row.value))}</TableCell>
                 <TableCell>{row.date}</TableCell>
                 <TableCell>{row.period_weeks}</TableCell>
                 <TableCell>{row.weighted_distribution ?? '—'}</TableCell>
