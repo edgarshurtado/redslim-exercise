@@ -25,3 +25,15 @@ test('explore link has no active indicator when not at /explore', () => {
   const exploreLink = screen.getByRole('link', { name: /explore/i })
   expect(exploreLink).not.toHaveClass('border-b-2')
 })
+
+test('evolution link shows active indicator at /evolution', () => {
+  renderAt('/evolution')
+  const link = screen.getByRole('link', { name: /evolution/i })
+  expect(link).toHaveClass('border-b-2', 'border-nav-accent', 'pb-0.5')
+})
+
+test('evolution link has no active indicator when not at /evolution', () => {
+  renderAt('/')
+  const link = screen.getByRole('link', { name: /evolution/i })
+  expect(link).not.toHaveClass('border-b-2')
+})

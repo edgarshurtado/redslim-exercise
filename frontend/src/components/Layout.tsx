@@ -29,6 +29,13 @@ function Layout() {
           >
             Dominance
           </RouterLink>
+          <RouterLink
+            to="/evolution"
+            aria-current={pathname === '/evolution' ? 'page' : undefined}
+            className={`text-nav-accent no-underline ml-4 text-sm ${pathname === '/evolution' ? 'border-b-2 border-nav-accent pb-0.5' : ''}`}
+          >
+            Evolution
+          </RouterLink>
         </Toolbar>
       </AppBar>
       <Outlet />
