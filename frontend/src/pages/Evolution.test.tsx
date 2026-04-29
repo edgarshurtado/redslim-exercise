@@ -108,3 +108,61 @@ describe('Evolution page — options fetch', () => {
     expect(screen.getByRole('combobox', { name: 'Value' })).toHaveAttribute('aria-disabled', 'true')
   })
 })
+
+describe('Evolution page — chart render', () => {
+  beforeEach(() => mockedGet.mockReset())
+  afterEach(() => jest.clearAllMocks())
+
+  it('renders bar chart with year data after both selectors are set', async () => {
+    mockedGet.mockImplementation((url: string) => {
+      if (url.includes('options')) return Promise.resolve({ data: ['Brand A'] })
+      if (url.includes('chart')) {
+        return Promise.resolve({
+          data: [
+            { year: 2020, total: '1000.00' },
+            { year: 2021, total: '2000.00' },
+          ],
+        })
+      }
+      return Promise.reject(new Error(`unexpected url: ${url}`))
+    })
+    renderPage()
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'Category' }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Brand' }))
+    await waitFor(() =>
+      expect(screen.getByRole('combobox', { name: 'Value' })).not.toHaveAttribute('aria-disabled', 'true')
+    )
+    await userEvent.click(screen.getByRole('combobox', { name: 'Value' }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Brand A' }))
+
+    await waitFor(() =>
+      expect(mockedGet).toHaveBeenCalledWith(
+        '/market-data/evolution/chart/?category=brand&value=Brand%20A'
+      )
+    )
+
+    expect(await screen.findByTestId('bar-chart')).toBeInTheDocument()
+    expect(screen.getByText('2020')).toBeInTheDocument()
+    expect(screen.getByText('2021')).toBeInTheDocument()
+  })
+
+  it('shows No data available when chart endpoint returns empty array', async () => {
+    mockedGet.mockImplementation((url: string) => {
+      if (url.includes('options')) return Promise.resolve({ data: ['Brand A'] })
+      if (url.includes('chart')) return Promise.resolve({ data: [] })
+      return Promise.reject(new Error(`unexpected url: ${url}`))
+    })
+    renderPage()
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'Category' }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Brand' }))
+    await waitFor(() =>
+      expect(screen.getByRole('combobox', { name: 'Value' })).not.toHaveAttribute('aria-disabled', 'true')
+    )
+    await userEvent.click(screen.getByRole('combobox', { name: 'Value' }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Brand A' }))
+
+    await waitFor(() => expect(screen.getByText('No data available')).toBeInTheDocument())
+  })
+})
