@@ -82,3 +82,9 @@ def data_df(rows):
     return pd.DataFrame(
         rows, columns=["MARKET_TAG", "PRODUCT_TAG", "PERIOD_TAG", "VAL", "WTD"]
     )
+
+
+@pytest.mark.django_db
+def test_folder_not_found():
+    with pytest.raises(CommandError, match="Folder not found"):
+        call_command("load_parquet", "this_folder_does_not_exist_xyz")
