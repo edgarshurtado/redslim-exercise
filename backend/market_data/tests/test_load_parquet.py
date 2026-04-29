@@ -349,3 +349,24 @@ def test_dangling_tag_silent_skip(write_parquet_folder):
 
     assert Data.objects.count() == 1
     assert "Loaded 1 rows" in out.getvalue()
+
+
+@pytest.mark.django_db
+def test_duplicate_input_rows_collapse(write_parquet_folder):
+    folder = write_parquet_folder(
+        "test_dup_input",
+        mkt=mkt_df([("M1", "S", "L")]),
+        per=per_df([("P1", "2020-01-05")]),
+        prod=prod_df([("PR1", "PROD", "B1", "S1")]),
+        data=data_df([
+            {"MARKET_TAG": "M1", "PRODUCT_TAG": "PR1",
+             "PERIOD_TAG": "P1", "VAL": 1.0, "WTD": 50.0},
+            {"MARKET_TAG": "M1", "PRODUCT_TAG": "PR1",
+             "PERIOD_TAG": "P1", "VAL": 2.0, "WTD": 60.0},
+        ]),
+    )
+    out = io.StringIO()
+    call_command("load_parquet", folder, stdout=out)
+
+    assert Data.objects.count() == 1
+    assert "Loaded 1 rows" in out.getvalue()
