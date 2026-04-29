@@ -189,3 +189,24 @@ def test_idempotency(write_parquet_folder):
     assert Product.objects.count() == 2
     assert Market.objects.count() == 1
     assert Data.objects.count() == 2
+
+
+@pytest.mark.django_db
+def test_brand_dedup(write_parquet_folder):
+    folder = write_parquet_folder(
+        "test_brand_dedup",
+        mkt=mkt_df([("M1", "S", "L")]),
+        per=per_df([("P1", "2020-01-05")]),
+        prod=prod_df([
+            ("PR1", "PROD ONE", "SHARED BRAND", "SUB A"),
+            ("PR2", "PROD TWO", "SHARED BRAND", "SUB B"),
+        ]),
+        data=data_df([
+            {"MARKET_TAG": "M1", "PRODUCT_TAG": "PR1", "PERIOD_TAG": "P1", "VAL": 1.0, "WTD": 50.0},
+        ]),
+    )
+    call_command("load_parquet", folder)
+
+    assert Brand.objects.filter(description="SHARED BRAND").count() == 1
+    assert SubBrand.objects.count() == 2
+    assert Product.objects.count() == 2
