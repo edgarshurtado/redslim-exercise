@@ -35,6 +35,7 @@ function Evolution() {
   const [chartData, setChartData] = useState<ChartRow[]>([])
   const [loadingOptions, setLoadingOptions] = useState(false)
   const [loadingChart, setLoadingChart] = useState(false)
+  const [hadChart, setHadChart] = useState(false)
 
   useEffect(() => {
     if (!category) return
@@ -67,6 +68,7 @@ function Evolution() {
       .then(({ data }) => {
         if (!cancelled) {
           setChartData(data.map((r) => ({ year: r.year, total: parseFloat(r.total) })))
+          setHadChart(true)
           setLoadingChart(false)
         }
       })
@@ -106,7 +108,7 @@ function Evolution() {
             <MenuItem value="market">Market</MenuItem>
           </Select>
         </FormControl>
-        <FormControl sx={{ minWidth: 220 }} disabled={!category || loadingOptions}>
+        <FormControl sx={{ minWidth: 220 }} disabled={!category || loadingOptions || (hadChart && !selectedValue)}>
           <InputLabel id="value-label">Value</InputLabel>
           <Select
             labelId="value-label"

@@ -166,3 +166,45 @@ describe('Evolution page — chart render', () => {
     await waitFor(() => expect(screen.getByText('No data available')).toBeInTheDocument())
   })
 })
+
+describe('Evolution page — category reset', () => {
+  beforeEach(() => mockedGet.mockReset())
+  afterEach(() => jest.clearAllMocks())
+
+  it('resets Value select and clears chart when Category changes after chart is shown', async () => {
+    mockedGet.mockImplementation((url: string) => {
+      if (url.includes('options')) return Promise.resolve({ data: ['Brand A'] })
+      if (url.includes('chart')) {
+        return Promise.resolve({ data: [{ year: 2020, total: '1000.00' }] })
+      }
+      return Promise.reject(new Error(`unexpected url: ${url}`))
+    })
+    renderPage()
+
+    // Select Brand → Brand A → chart appears
+    await userEvent.click(screen.getByRole('combobox', { name: 'Category' }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Brand' }))
+    await waitFor(() =>
+      expect(screen.getByRole('combobox', { name: 'Value' })).not.toHaveAttribute('aria-disabled', 'true')
+    )
+    await userEvent.click(screen.getByRole('combobox', { name: 'Value' }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Brand A' }))
+    await waitFor(() => expect(screen.getByTestId('bar-chart')).toBeInTheDocument())
+
+    // Change Category to Market
+    mockedGet.mockResolvedValue({ data: ['Market 1'] })
+    await userEvent.click(screen.getByRole('combobox', { name: 'Category' }))
+    await userEvent.click(await screen.findByRole('option', { name: 'Market' }))
+
+    // Chart disappears and placeholder returns
+    await waitFor(() =>
+      expect(
+        screen.getByText('Select a category and a value to see the evolution chart.')
+      ).toBeInTheDocument()
+    )
+    expect(screen.queryByTestId('bar-chart')).not.toBeInTheDocument()
+
+    // Value select is disabled again (no value selected)
+    expect(screen.getByRole('combobox', { name: 'Value' })).toHaveAttribute('aria-disabled', 'true')
+  })
+})
